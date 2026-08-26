@@ -192,19 +192,12 @@
     color: #9a9a9c;
   }
 
-  .lock-forgot-btn {
-    background: transparent;
-    border: none;
+  .lock-forgot-note {
     color: #7d8a94;
-    font: inherit;
     font-size: 11px;
-    text-decoration: underline;
-    cursor: pointer;
-    padding: 4px;
-  }
-
-  .lock-forgot-btn:hover {
-    color: #a8b4bc;
+    line-height: 1.5;
+    max-width: 260px;
+    margin: 4px 0 0;
   }
 
   /* ---------- App lock settings sub-panel ---------- */
@@ -2952,7 +2945,7 @@
       <button class="lock-key lock-key-back" id="lock-backspace" aria-label="Backspace">&#9003;</button>
     </div>
 
-    <button class="lock-forgot-btn" id="lock-forgot-btn">Forgot PIN? Reset (clears local lock only)</button>
+    <p class="lock-forgot-note">Forgot your PIN? Clear this site's data in your browser settings to reset the app (this also erases your saved progress unless you've exported a backup).</p>
   </div>
 </div>
 
@@ -5874,8 +5867,33 @@
     }
 
     function openOnly(popover) {
-      allPopovers.forEach((p) => p.classList.toggle("visible", p === popover));
+      allPopovers.forEach((p) => {
+        p.classList.toggle("visible", p === popover);
+        p.style.left = "";
+        p.style.right = "";
+      });
       menuBtn.setAttribute("aria-expanded", "true");
+      if (popover) clampPopoverToViewport(popover);
+    }
+
+    // Popovers are positioned with `right: 0` relative to their small
+    // trigger icon, which can push them past the left edge of the
+    // viewport on wider screens (iPad, desktop) where that icon isn't
+    // near the true page edge. This nudges the popover back on-screen
+    // after it renders, using its real measured position rather than
+    // guessing at a breakpoint.
+    function clampPopoverToViewport(popover) {
+      // Let the browser paint it first so getBoundingClientRect is accurate.
+      requestAnimationFrame(() => {
+        const rect = popover.getBoundingClientRect();
+        const margin = 12;
+        if (rect.left < margin) {
+          const overflow = margin - rect.left;
+          const currentRight = parseFloat(getComputedStyle(popover).right) || 0;
+          popover.style.left = "auto";
+          popover.style.right = `${currentRight - overflow}px`;
+        }
+      });
     }
 
     menuBtn.addEventListener("click", (e) => {
@@ -6112,16 +6130,6 @@
       lockEntry = lockEntry.slice(0, -1);
       setLockError("");
       renderLockDots();
-    });
-
-    document.getElementById("lock-forgot-btn").addEventListener("click", () => {
-      const confirmed = window.confirm(
-        "Reset the app lock? This only removes the PIN on this device — it does not delete or restore any of your study data. You'll be asked to set a new PIN afterward, or you can leave the app unlocked."
-      );
-      if (!confirmed) return;
-      savePinHash(null);
-      hideLockOverlay();
-      showToast("PIN removed");
     });
   }
 
