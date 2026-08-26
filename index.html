@@ -589,6 +589,98 @@
     border-color: rgba(255,167,89,0.2);
   }
 
+  /* ---------- Mobile: compact date-strip as a 2×2 grid instead of
+     stacking 4 rows tall, plus tighter header spacing overall ---------- */
+  @media (max-width: 480px) {
+    .date-strip {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      padding: 10px 12px;
+      margin-top: 10px;
+    }
+
+    .date-block {
+      padding: 5px 8px;
+      gap: 2px;
+    }
+
+    .date-label {
+      font-size: 8px;
+    }
+
+    .date-value {
+      font-size: 12px;
+    }
+
+    .exam-date-input {
+      font-size: 12px;
+      padding: 1px 4px;
+      width: 100%;
+    }
+
+    header {
+      padding: 14px 14px 10px;
+    }
+
+    .title-row {
+      gap: 4px;
+    }
+
+    .eyebrow {
+      margin-top: 2px;
+      font-size: 11px;
+    }
+
+    .timer-toggle-strip {
+      margin-top: 8px;
+    }
+
+    /* Tighter overall page rhythm on phones — less dead space between
+       the header and content, and between subject groups. */
+    main {
+      padding: 16px 14px 48px;
+    }
+
+    section.group {
+      margin-bottom: 24px;
+    }
+
+    .group-header {
+      margin-bottom: 10px;
+    }
+
+    .group-header h2 {
+      font-size: 17px;
+    }
+
+    /* More compact subject/overview tiles so more fit per screen while
+       keeping the ring a safe tap target (Apple's 44px minimum). */
+    .grid {
+      gap: 10px;
+    }
+
+    .tile {
+      padding: 10px 12px 9px;
+      gap: 10px;
+    }
+
+    .ring-wrap {
+      width: 46px;
+      height: 46px;
+      min-width: 46px;
+    }
+
+    .tile-name {
+      font-size: 14px;
+    }
+
+    .tile-hint,
+    .tile-progress-label {
+      font-size: 10px;
+    }
+  }
+
   .countdown-block .date-value {
     color: #ffa759;
     text-shadow: 0 0 6px rgba(255,167,89,0.7), 0 0 16px rgba(255,167,89,0.35);
