@@ -93,6 +93,7 @@
   header {
     border-bottom: 2px solid #1c1c1a;
     padding: 24px 24px 18px;
+    padding-top: calc(24px + env(safe-area-inset-top));
     background: var(--bg-page, #f6f3ec);
     position: sticky;
     top: 0;
@@ -621,6 +622,7 @@
 
     header {
       padding: 14px 14px 10px;
+      padding-top: calc(14px + env(safe-area-inset-top));
     }
 
     .title-row {
