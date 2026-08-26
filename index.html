@@ -2321,176 +2321,6 @@
     transform: scale(0.9);
   }
 
-  /* ---------- Per-chapter link control ---------- */
-
-  .chapter-link-wrap {
-    position: relative;
-    display: flex;
-    justify-content: center;
-  }
-
-  .chapter-link-btn {
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    border: 1px solid rgba(28,28,26,0.2);
-    background: rgba(28,28,26,0.03);
-    color: #6b6558;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background 0.12s ease, border-color 0.12s ease, transform 0.1s ease, color 0.12s ease;
-  }
-
-  .chapter-link-btn svg {
-    width: 15px;
-    height: 15px;
-    stroke: currentColor;
-  }
-
-  .chapter-link-btn:hover {
-    background: rgba(28,28,26,0.08);
-    transform: translateY(-1px);
-  }
-
-  .chapter-link-btn:active {
-    transform: translateY(1px);
-  }
-
-  .chapter-link-btn.has-link {
-    background: linear-gradient(155deg, #dfeaf4 0%, #b7cfe4 60%, #8fb3d3 100%);
-    border-color: #4a6c8a;
-    color: #1e3a54;
-  }
-
-  .chapter-link-popover {
-    display: none;
-    position: absolute;
-    top: calc(100% + 6px);
-    right: 0;
-    background: linear-gradient(165deg, rgba(255,255,255,0.94) 0%, rgba(251,250,247,0.88) 100%);
-    backdrop-filter: blur(16px) saturate(160%);
-    -webkit-backdrop-filter: blur(16px) saturate(160%);
-    border: 1px solid rgba(255,255,255,0.5);
-    border-radius: 12px;
-    padding: 12px;
-    box-shadow:
-      0 1px 0 rgba(255,255,255,0.7) inset,
-      0 12px 28px rgba(28,28,26,0.2),
-      0 3px 10px rgba(28,28,26,0.12);
-    z-index: 30;
-    width: 240px;
-    flex-direction: column;
-    gap: 8px;
-    text-align: left;
-  }
-
-  .chapter-link-popover.visible {
-    display: flex;
-  }
-
-  .chapter-link-label {
-    font-size: 10px;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-    opacity: 0.55;
-  }
-
-  .chapter-link-input {
-    font: inherit;
-    font-size: 12px;
-    border: 1px solid rgba(28,28,26,0.25);
-    border-radius: 5px;
-    padding: 6px 8px;
-    background: #fffdf8;
-    color: #1c1c1a;
-  }
-
-  .chapter-link-input:focus {
-    outline: none;
-    border-color: #1c1c1a;
-  }
-
-  .chapter-link-actions {
-    display: flex;
-    gap: 6px;
-  }
-
-  .chapter-link-actions button {
-    flex: 1;
-    font: inherit;
-    font-size: 11px;
-    font-weight: 600;
-    border: none;
-    border-radius: 5px;
-    padding: 6px 8px;
-    cursor: pointer;
-    transition: filter 0.12s ease, transform 0.1s ease, opacity 0.12s ease;
-  }
-
-  .chapter-link-open,
-  .chapter-link-copy {
-    background: rgba(28,28,26,0.08);
-    color: #1c1c1a;
-  }
-
-  .chapter-link-save {
-    background: #1c1c1a;
-    color: #f6f3ec;
-  }
-
-  .chapter-link-actions button:hover {
-    filter: brightness(1.1);
-    transform: translateY(-1px);
-  }
-
-  .chapter-link-actions button:active {
-    transform: translateY(1px);
-  }
-
-  .chapter-link-actions button:disabled {
-    opacity: 0.4;
-    cursor: default;
-    transform: none;
-    filter: none;
-  }
-
-  .chapter-link-divider {
-    height: 1px;
-    background: rgba(28,28,26,0.1);
-    margin: 2px 0;
-  }
-
-  .chapter-link-hint {
-    font-size: 10.5px;
-    line-height: 1.4;
-    opacity: 0.6;
-    margin: -2px 0 0;
-  }
-
-  .chapter-link-copy-deep {
-    font: inherit;
-    font-size: 11px;
-    font-weight: 600;
-    border: none;
-    border-radius: 5px;
-    padding: 7px 8px;
-    cursor: pointer;
-    background: linear-gradient(155deg, #dfeaf4 0%, #b7cfe4 60%, #8fb3d3 100%);
-    color: #1e3a54;
-    transition: filter 0.12s ease, transform 0.1s ease;
-  }
-
-  .chapter-link-copy-deep:hover {
-    filter: brightness(1.08);
-    transform: translateY(-1px);
-  }
-
-  .chapter-link-copy-deep:active {
-    transform: translateY(1px);
-  }
-
   .empty-state {
     padding: 40px 20px;
     text-align: center;
@@ -3108,6 +2938,41 @@
     "Clinical": { tag: "Yr 3–4", tint: "#8b2e3f" },
   };
 
+  // ---------- Removed built-in subjects ----------
+  // The 19 default subjects are hardcoded above, so removing one can't be
+  // done by simply deleting it from an array — it would just reappear on
+  // the next page load. Instead we keep a persisted list of IDs to filter
+  // out every time SUBJECTS is used, applied immediately below before any
+  // other code reads the array (weightage totals, grouping, rendering).
+  const REMOVED_BUILTIN_KEY = "rounds_removed_builtin_subjects_v1";
+
+  function loadRemovedBuiltinIds() {
+    try {
+      const raw = localStorage.getItem(REMOVED_BUILTIN_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) {
+      console.error("Failed to load removed built-in subjects", e);
+      return [];
+    }
+  }
+
+  function saveRemovedBuiltinIds(list) {
+    try {
+      localStorage.setItem(REMOVED_BUILTIN_KEY, JSON.stringify(list));
+    } catch (e) {
+      console.error("Failed to save removed built-in subjects", e);
+    }
+  }
+
+  function applyRemovedBuiltinFilter() {
+    const removedIds = loadRemovedBuiltinIds();
+    if (removedIds.length === 0) return;
+    for (let i = SUBJECTS.length - 1; i >= 0; i--) {
+      if (removedIds.includes(SUBJECTS[i].id)) SUBJECTS.splice(i, 1);
+    }
+  }
+  applyRemovedBuiltinFilter();
+
   // Snapshot of each group's original display name and year tag, captured
   // before any saved overrides are applied — used to restore defaults if
   // an edit is cleared back to blank. Keyed by the internal GROUPS id
@@ -3160,12 +3025,12 @@
     saveCustomSubjects(custom);
   }
 
-  // Reliable check for whether a subject can be removed: membership in
-  // the persisted custom-subjects list, not just the in-memory `custom`
-  // flag — this way it works correctly even for subjects that were added
-  // before that flag was consistently set on every saved record.
+  // Every subject — built-in or custom — can now be removed. This just
+  // confirms the subject actually exists right now (SUBJECTS is the
+  // single source of truth after startup filtering/merging), so the
+  // caller never tries to remove something already gone.
   function isRemovableSubject(subjectId) {
-    return loadCustomSubjects().some(s => s.id === subjectId);
+    return SUBJECTS.some(s => s.id === subjectId);
   }
 
   function slugify(text) {
@@ -3183,19 +3048,28 @@
     return newSubject;
   }
 
-  // Removes a custom subject entirely: drops it from the in-memory
-  // SUBJECTS list, from the persisted custom-subjects list, from any
-  // saved rename override, and deletes its chapter data. Only ever
-  // called for subjects with custom:true — the 19 built-in subjects
-  // can be renamed but never removed, since exam weightage and grouping
-  // are meant to stay structurally stable.
-  function removeCustomSubject(subjectId) {
+  // Removes any subject — built-in or custom — entirely: drops it from
+  // the in-memory SUBJECTS list, from whichever persisted list it came
+  // from (the removed-built-ins list for the 19 defaults, or the
+  // custom-subjects list for ones added via "+"), from any saved rename
+  // override, and deletes its chapter data. This can't be undone from
+  // within the app — there's no "restore default subject" option.
+  function removeSubjectEntirely(subjectId) {
     if (!isRemovableSubject(subjectId)) return;
     const idx = SUBJECTS.findIndex(s => s.id === subjectId);
+    const isCustom = idx !== -1 && !!SUBJECTS[idx].custom;
     if (idx !== -1) SUBJECTS.splice(idx, 1);
 
-    const custom = loadCustomSubjects().filter(s => s.id !== subjectId);
-    saveCustomSubjects(custom);
+    if (isCustom) {
+      const custom = loadCustomSubjects().filter(s => s.id !== subjectId);
+      saveCustomSubjects(custom);
+    } else {
+      const removedIds = loadRemovedBuiltinIds();
+      if (!removedIds.includes(subjectId)) {
+        removedIds.push(subjectId);
+        saveRemovedBuiltinIds(removedIds);
+      }
+    }
 
     const nameOverrides = loadSubjectNameOverrides();
     if (nameOverrides[subjectId]) {
@@ -3587,7 +3461,10 @@
             ` : ""}
           </div>
           <div class="tile-confirm-remove">
-            <p class="tile-confirm-text">Remove "${escapeHtml(s.name)}"? Chapters and progress will be deleted.</p>
+            <p class="tile-confirm-text">${s.custom
+              ? `Remove "${escapeHtml(s.name)}"? Chapters and progress will be deleted.`
+              : `Remove "${escapeHtml(s.name)}"? This is one of the 19 default subjects — it cannot be restored later. All its chapters and progress will be deleted.`
+            }</p>
             <div class="tile-confirm-actions">
               <button class="tile-confirm-cancel">Cancel</button>
               <button class="tile-confirm-delete">Remove</button>
@@ -3696,7 +3573,7 @@
         confirmPanel.querySelector(".tile-confirm-delete").addEventListener("click", (e) => {
           e.stopPropagation();
           closeConfirmRemove();
-          removeCustomSubject(s.id);
+          removeSubjectEntirely(s.id);
           renderSubjectList();
           showToast(`${s.name} removed`);
         });
@@ -3837,57 +3714,11 @@
   }
 
   // ---------- Chapter detail view ----------
-  function openSubject(subject, highlightChapterId) {
+  function openSubject(subject) {
     backAction = null;
     showView("chapters");
     document.getElementById("header-subtitle").textContent = "Track chapters for this subject — everything below is editable.";
     renderChapterView(subject);
-
-    if (highlightChapterId) {
-      // Give the freshly-rendered table a frame to paint before scrolling.
-      requestAnimationFrame(() => {
-        const row = document.querySelector(`#chapter-tbody tr[data-chapter-id="${highlightChapterId}"]`);
-        if (row) {
-          row.scrollIntoView({ behavior: "smooth", block: "center" });
-          row.classList.add("revised-pulse");
-          row.addEventListener("animationend", () => row.classList.remove("revised-pulse"), { once: true });
-        }
-      });
-    }
-  }
-
-  // ---------- Deep links: #chapter=<chapterId> jumps straight to that
-  // chapter from an external link (e.g. one pasted into a notes app). ----------
-  function findChapterAnywhere(chapterId) {
-    for (const subject of SUBJECTS) {
-      const chapters = getChapters(subject.id);
-      const chapter = chapters.find(c => c.id === chapterId);
-      if (chapter) return { subject, chapter };
-    }
-    return null;
-  }
-
-  function buildChapterDeepLink(chapterId) {
-    const base = `${location.origin}${location.pathname}`;
-    return `${base}#chapter=${encodeURIComponent(chapterId)}`;
-  }
-
-  function handleDeepLink() {
-    const hash = location.hash || "";
-    const match = hash.match(/#chapter=([^&]+)/);
-    if (!match) return false;
-
-    const chapterId = decodeURIComponent(match[1]);
-    const found = findChapterAnywhere(chapterId);
-
-    if (!found) {
-      showToast("That chapter link doesn't match anything in this dashboard");
-      history.replaceState(null, "", location.pathname + location.search);
-      return false;
-    }
-
-    openSubject(found.subject, found.chapter.id);
-    return true;
   }
 
   function renderChapterView(subject) {
@@ -3918,12 +3749,11 @@
         <table>
           <thead>
             <tr>
-              <th style="width:24%">Chapter</th>
+              <th style="width:26%">Chapter</th>
               <th>MCQ</th>
               <th>PYQ</th>
               <th>Lecture completed</th>
               <th>Revision</th>
-              <th>Link</th>
               <th></th>
             </tr>
           </thead>
@@ -3933,7 +3763,7 @@
     `;
 
     document.getElementById("add-chapter-btn").addEventListener("click", () => {
-      chapters.push({ id: uid(), name: "", mcq: "", pyq: "", lectureDate: "", revision: "none", link: "" });
+      chapters.push({ id: uid(), name: "", mcq: "", pyq: "", lectureDate: "", revision: "none" });
       persist();
       renderChapterView(subject);
       requestAnimationFrame(() => {
@@ -3955,7 +3785,7 @@
 
     if (chapters.length === 0) {
       tbody.innerHTML = `
-        <tr><td colspan="7">
+        <tr><td colspan="6">
           <div class="empty-state-rich">
             <div class="empty-state-icon">
               <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
@@ -3978,7 +3808,6 @@
     chapters.forEach(ch => {
       const tr = document.createElement("tr");
       tr.setAttribute("data-chapter-id", ch.id);
-      const hasLink = !!(ch.link && ch.link.trim());
       tr.innerHTML = `
         <td class="chapter-name-cell">
           <input type="text" placeholder="Chapter name" value="${escapeHtml(ch.name)}" data-field="name" />
@@ -3995,35 +3824,10 @@
             </select>
           </div>
         </td>
-        <td>
-          <div class="chapter-link-wrap">
-            <button class="chapter-link-btn${hasLink ? " has-link" : ""}" title="${hasLink ? "Chapter link" : "Add a link"}" aria-label="${hasLink ? "Chapter link" : "Add a link"}">
-              <svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M9 17H7a5 5 0 0 1 0-10h2"></path>
-                <path d="M15 7h2a5 5 0 0 1 0 10h-2"></path>
-                <path d="M8 12h8"></path>
-              </svg>
-            </button>
-            <div class="chapter-link-popover">
-              <label class="chapter-link-label">Link for this chapter</label>
-              <input type="url" class="chapter-link-input" placeholder="https://…" value="${escapeHtml(ch.link || "")}" autocomplete="off" />
-              <div class="chapter-link-actions">
-                <button class="chapter-link-open" ${hasLink ? "" : "disabled"}>Open</button>
-                <button class="chapter-link-copy" ${hasLink ? "" : "disabled"}>Copy</button>
-                <button class="chapter-link-save">Save</button>
-              </div>
-              <div class="chapter-link-divider"></div>
-              <label class="chapter-link-label">Jump back to this chapter</label>
-              <p class="chapter-link-hint">Paste this into another app (like a notes app) — tapping it opens this exact chapter here.</p>
-              <button class="chapter-link-copy-deep">Copy dashboard link</button>
-            </div>
-          </div>
-        </td>
         <td><button class="del-btn" title="Delete chapter" aria-label="Delete chapter">&times;</button></td>
       `;
 
       tr.querySelectorAll("input, select").forEach(el => {
-        if (el.classList.contains("chapter-link-input")) return; // handled separately below
         const evt = el.tagName === "SELECT" ? "change" : "input";
         el.addEventListener(evt, () => {
           const field = el.getAttribute("data-field");
@@ -4038,8 +3842,6 @@
         });
       });
 
-      initChapterLinkControl(tr, ch, chapters, subject);
-
       tr.querySelector(".del-btn").addEventListener("click", () => {
         const idx = chapters.findIndex(c => c.id === ch.id);
         if (idx > -1) chapters.splice(idx, 1);
@@ -4049,114 +3851,6 @@
       });
 
       tbody.appendChild(tr);
-    });
-  }
-
-  // Wires up one chapter row's link icon: click to open a small popover
-  // where the URL can be pasted/edited, plus Open / Copy / Save actions.
-  // Each link is stored on that chapter's own record only (ch.link) — it
-  // never touches any other chapter or subject.
-  function initChapterLinkControl(tr, ch, chapters, subject) {
-    const wrap = tr.querySelector(".chapter-link-wrap");
-    const btn = wrap.querySelector(".chapter-link-btn");
-    const popover = wrap.querySelector(".chapter-link-popover");
-    const input = wrap.querySelector(".chapter-link-input");
-    const openBtn = wrap.querySelector(".chapter-link-open");
-    const copyBtn = wrap.querySelector(".chapter-link-copy");
-    const saveBtn = wrap.querySelector(".chapter-link-save");
-    const copyDeepBtn = wrap.querySelector(".chapter-link-copy-deep");
-
-    function normalizeUrl(raw) {
-      const trimmed = (raw || "").trim();
-      if (!trimmed) return "";
-      if (/^https?:\/\//i.test(trimmed)) return trimmed;
-      return `https://${trimmed}`;
-    }
-
-    function refreshButtonState() {
-      const hasLink = !!(ch.link && ch.link.trim());
-      btn.classList.toggle("has-link", hasLink);
-      btn.title = hasLink ? "Chapter link" : "Add a link";
-      openBtn.disabled = !hasLink;
-      copyBtn.disabled = !hasLink;
-    }
-
-    function openPopover(e) {
-      if (e) e.stopPropagation();
-      document.querySelectorAll(".chapter-link-popover.visible").forEach(p => {
-        if (p !== popover) p.classList.remove("visible");
-      });
-      popover.classList.add("visible");
-      input.focus();
-    }
-
-    function closePopover() {
-      popover.classList.remove("visible");
-    }
-
-    function saveLink() {
-      const normalized = normalizeUrl(input.value);
-      ch.link = normalized;
-      input.value = normalized;
-      persist();
-      refreshButtonState();
-      showToast(normalized ? "Link saved" : "Link cleared");
-      closePopover();
-    }
-
-    btn.addEventListener("click", openPopover);
-
-    input.addEventListener("click", (e) => e.stopPropagation());
-    input.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") { e.preventDefault(); saveLink(); }
-      else if (e.key === "Escape") { e.preventDefault(); closePopover(); }
-    });
-
-    saveBtn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      saveLink();
-    });
-
-    openBtn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      if (ch.link) window.open(ch.link, "_blank", "noopener,noreferrer");
-    });
-
-    copyBtn.addEventListener("click", async (e) => {
-      e.stopPropagation();
-      if (!ch.link) return;
-      try {
-        await navigator.clipboard.writeText(ch.link);
-        showToast("Link copied — paste it anywhere");
-      } catch (err) {
-        // Clipboard API unavailable/blocked — fall back to a selectable
-        // input so the user can copy manually.
-        input.focus();
-        input.select();
-        showToast("Select and copy the link below");
-      }
-    });
-
-    copyDeepBtn.addEventListener("click", async (e) => {
-      e.stopPropagation();
-      const deepLink = buildChapterDeepLink(ch.id);
-      try {
-        await navigator.clipboard.writeText(deepLink);
-        showToast("Dashboard link copied — paste it in your notes app");
-      } catch (err) {
-        // Clipboard API unavailable/blocked — fall back to a temporary
-        // selectable field so the user can copy it manually.
-        const tempInput = document.createElement("input");
-        tempInput.value = deepLink;
-        tempInput.readOnly = true;
-        tempInput.style.position = "fixed";
-        tempInput.style.opacity = "0";
-        document.body.appendChild(tempInput);
-        tempInput.select();
-        try { document.execCommand("copy"); } catch (e2) { /* ignore */ }
-        document.body.removeChild(tempInput);
-        showToast("Dashboard link copied — paste it in your notes app");
-      }
     });
   }
 
@@ -5023,6 +4717,7 @@
     headerLabels: "rounds_header_labels_v1",
     groupLabels: "rounds_group_labels_v1",
     customSubjects: "rounds_custom_subjects_v1",
+    removedBuiltinSubjects: "rounds_removed_builtin_subjects_v1",
   };
 
   function buildBackupPayload() {
@@ -5123,11 +4818,12 @@
     if (emailInput) emailInput.value = savedProfile.email || "";
     updateOwnerBadge(savedProfile);
 
-    // Subject renames, custom subjects, tile color, background color,
-    // header title/exam name, and timer visibility all need to be
-    // re-applied too — without this, a restored backup would leave stale
-    // values on screen until a manual page reload, even though the
-    // underlying data was updated.
+    // Subject renames, custom subjects, removed built-in subjects, tile
+    // color, background color, header title/exam name, and timer
+    // visibility all need to be re-applied too — without this, a
+    // restored backup would leave stale values on screen until a manual
+    // page reload, even though the underlying data was updated.
+    applyRemovedBuiltinFilter();
     mergeCustomSubjects();
     applySubjectNameOverrides();
 
@@ -6041,13 +5737,6 @@
     });
   });
 
-  // Same idea for every chapter row's link popover — one shared listener
-  // instead of one per row, since the chapter table can re-render often.
-  document.addEventListener("click", (e) => {
-    if (e.target.closest(".chapter-link-popover") || e.target.closest(".chapter-link-btn")) return;
-    document.querySelectorAll(".chapter-link-popover.visible").forEach(p => p.classList.remove("visible"));
-  });
-
   initCalendarState();
   initBgColorPicker();
   applySubjectNameOverrides();
@@ -6064,10 +5753,6 @@
   document.getElementById("open-revision-due-tile").addEventListener("click", openRevisionDueDashboard);
   document.getElementById("open-revision-backlog-tile").addEventListener("click", openRevisionBacklogDashboard);
   initTimerWidget();
-
-  // If the page was opened via a chapter deep link (e.g. tapped from a
-  // notes app), jump straight to that chapter instead of the home view.
-  handleDeepLink();
 
   // ---------- Service worker registration (offline support) ----------
   // Only registers when served over http(s) — silently no-ops on file://
