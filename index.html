@@ -16,7 +16,9 @@
 <link rel="apple-touch-icon" href="./icon-192.png" />
 
 <script>
-  // Applied before first paint to avoid a flash of the default background.
+  // Applied before first paint to avoid a flash of the default background,
+  // and to decide immediately whether the app-lock PIN screen is needed
+  // before any dashboard content becomes visible.
   (function () {
     try {
       var saved = localStorage.getItem("rounds_bg_color_v1");
@@ -26,6 +28,15 @@
     } catch (e) {
       // localStorage unavailable — default background applies as normal.
     }
+
+    try {
+      var pinHash = localStorage.getItem("rounds_applock_hash_v1");
+      if (pinHash) {
+        document.documentElement.setAttribute("data-locked", "true");
+      }
+    } catch (e) {
+      // localStorage unavailable — app opens unlocked as normal.
+    }
   })();
 </script>
 
@@ -33,6 +44,220 @@
   @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&display=swap');
 
   * { box-sizing: border-box; }
+
+  /* ---------- App lock screen ---------- */
+
+  .lock-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    background:
+      repeating-linear-gradient(180deg, rgba(255,255,255,0.015) 0px, rgba(255,255,255,0.015) 1px, transparent 1px, transparent 3px),
+      linear-gradient(155deg, #232326 0%, #17171a 55%, #0e0e10 100%);
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .lock-overlay.visible {
+    display: flex;
+  }
+
+  /* When a PIN is set, the early inline script marks <html> with
+     data-locked before first paint — this hides the header/main content
+     immediately so there's no flash of the dashboard before the lock
+     screen's own JS has a chance to run and show itself. The lock
+     overlay markup itself is exempt so it can still render on top. */
+  html[data-locked="true"] header,
+  html[data-locked="true"] main {
+    display: none;
+  }
+
+  .lock-panel {
+    width: 100%;
+    max-width: 320px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 6px;
+  }
+
+  .lock-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: linear-gradient(155deg, #2f2f31 0%, #1c1c1e 100%);
+    border: 1px solid #45464a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 10px;
+  }
+
+  .lock-icon svg {
+    width: 22px;
+    height: 22px;
+    stroke: #5fd4e8;
+  }
+
+  .lock-title {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 20px;
+    color: #f0eee6;
+  }
+
+  .lock-sub {
+    font-size: 12px;
+    color: #9a9a9c;
+    margin-bottom: 18px;
+  }
+
+  .lock-dots {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 8px;
+    height: 14px;
+    align-items: center;
+  }
+
+  .lock-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 1.5px solid #5a5a5e;
+    background: transparent;
+    transition: background 0.12s ease, border-color 0.12s ease, transform 0.12s ease;
+  }
+
+  .lock-dot.filled {
+    background: #5fd4e8;
+    border-color: #5fd4e8;
+    box-shadow: 0 0 8px rgba(95,212,232,0.6);
+    transform: scale(1.1);
+  }
+
+  .lock-overlay.shake .lock-dots {
+    animation: lock-shake 0.4s ease;
+  }
+
+  @keyframes lock-shake {
+    0%, 100% { transform: translateX(0); }
+    20% { transform: translateX(-8px); }
+    40% { transform: translateX(8px); }
+    60% { transform: translateX(-6px); }
+    80% { transform: translateX(6px); }
+  }
+
+  .lock-error {
+    font-size: 12px;
+    color: #e8697a;
+    min-height: 16px;
+    margin-bottom: 8px;
+  }
+
+  .lock-keypad {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin: 8px 0 20px;
+  }
+
+  .lock-key {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: linear-gradient(155deg, #2f2f31 0%, #1c1c1e 100%);
+    border: 1px solid #45464a;
+    color: #f0eee6;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 22px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: filter 0.12s ease, transform 0.1s ease;
+  }
+
+  .lock-key:hover {
+    filter: brightness(1.2);
+  }
+
+  .lock-key:active {
+    transform: scale(0.94);
+  }
+
+  .lock-key-back {
+    font-size: 18px;
+    color: #9a9a9c;
+  }
+
+  .lock-forgot-btn {
+    background: transparent;
+    border: none;
+    color: #7d8a94;
+    font: inherit;
+    font-size: 11px;
+    text-decoration: underline;
+    cursor: pointer;
+    padding: 4px;
+  }
+
+  .lock-forgot-btn:hover {
+    color: #a8b4bc;
+  }
+
+  /* ---------- App lock settings sub-panel ---------- */
+
+  .applock-popover {
+    display: none;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .applock-popover.visible {
+    display: flex;
+  }
+
+  .applock-desc {
+    font-size: 12px;
+    font-weight: 600;
+    margin: 0;
+  }
+
+  .applock-note {
+    font-size: 10.5px;
+    line-height: 1.5;
+    opacity: 0.6;
+    margin: 0;
+  }
+
+  .applock-action-btn {
+    font: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 10px;
+    cursor: pointer;
+    background: #1c1c1a;
+    color: #f6f3ec;
+    transition: filter 0.12s ease, transform 0.1s ease;
+  }
+
+  .applock-action-btn:hover {
+    filter: brightness(1.15);
+    transform: translateY(-1px);
+  }
+
+  .applock-action-btn:active {
+    transform: translateY(1px);
+  }
+
+  .applock-remove-btn {
+    background: rgba(139,46,63,0.1);
+    color: #8b2e3f;
+  }
 
   /* ---------- Global checkbox material treatment ---------- */
   /* Applies a carved, embossed look to every checkbox in the app so they
@@ -2697,6 +2922,40 @@
 </head>
 <body>
 
+<div class="lock-overlay" id="lock-overlay" aria-hidden="true">
+  <div class="lock-panel">
+    <div class="lock-icon">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="4" y="10.5" width="16" height="10" rx="2"></rect>
+        <path d="M7.5 10.5V7a4.5 4.5 0 0 1 9 0v3.5"></path>
+      </svg>
+    </div>
+    <div class="lock-title" id="lock-title">Enter PIN</div>
+    <div class="lock-sub" id="lock-sub">Unlock your dashboard</div>
+
+    <div class="lock-dots" id="lock-dots"></div>
+
+    <div class="lock-error" id="lock-error"></div>
+
+    <div class="lock-keypad" id="lock-keypad">
+      <button class="lock-key" data-key="1">1</button>
+      <button class="lock-key" data-key="2">2</button>
+      <button class="lock-key" data-key="3">3</button>
+      <button class="lock-key" data-key="4">4</button>
+      <button class="lock-key" data-key="5">5</button>
+      <button class="lock-key" data-key="6">6</button>
+      <button class="lock-key" data-key="7">7</button>
+      <button class="lock-key" data-key="8">8</button>
+      <button class="lock-key" data-key="9">9</button>
+      <span></span>
+      <button class="lock-key" data-key="0">0</button>
+      <button class="lock-key lock-key-back" id="lock-backspace" aria-label="Backspace">&#9003;</button>
+    </div>
+
+    <button class="lock-forgot-btn" id="lock-forgot-btn">Forgot PIN? Reset (clears local lock only)</button>
+  </div>
+</div>
+
 <header>
   <div class="header-inner">
     <div class="owner-name-badge" id="owner-name-badge">
@@ -2842,6 +3101,15 @@
                 </span>
                 <span>Backup &amp; restore</span>
               </button>
+              <button class="color-menu-item" id="open-app-lock-panel-btn">
+                <span class="settings-menu-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="4" y="10.5" width="16" height="10" rx="2"></rect>
+                    <path d="M7.5 10.5V7a4.5 4.5 0 0 1 9 0v3.5"></path>
+                  </svg>
+                </span>
+                <span>App lock</span>
+              </button>
             </div>
           </div>
 
@@ -2917,6 +3185,15 @@
               <span>Import backup</span>
             </button>
             <input type="file" id="import-file-input" accept="application/json" style="display:none" />
+          </div>
+
+          <!-- App lock sub-panel -->
+          <div class="color-picker-popover applock-popover" id="applock-popover">
+            <button class="color-submenu-back" id="applock-back-btn">&larr; Back</button>
+            <p class="applock-desc" id="applock-status-desc">No PIN set — anyone who opens this app can see everything.</p>
+            <p class="applock-note">A PIN only stops someone from casually opening this app on your unlocked phone. It's stored on this device only and isn't real encryption — your iPhone's own passcode/Face ID is still your strongest protection.</p>
+            <button class="applock-action-btn" id="applock-set-btn">Set a PIN</button>
+            <button class="applock-action-btn applock-remove-btn" id="applock-remove-btn" style="display:none">Remove PIN</button>
           </div>
         </div>
       </div>
@@ -5587,8 +5864,9 @@
     const bgPopover = document.getElementById("bg-color-popover");
     const profilePopover = document.getElementById("profile-popover");
     const backupPopover = document.getElementById("backup-popover");
+    const applockPopover = document.getElementById("applock-popover");
 
-    const allPopovers = [menuPopover, tilePopover, bgPopover, profilePopover, backupPopover];
+    const allPopovers = [menuPopover, tilePopover, bgPopover, profilePopover, backupPopover, applockPopover];
 
     function closeAll() {
       allPopovers.forEach((p) => p.classList.remove("visible"));
@@ -5632,6 +5910,12 @@
       openOnly(backupPopover);
     });
 
+    document.getElementById("open-app-lock-panel-btn").addEventListener("click", (e) => {
+      e.stopPropagation();
+      openOnly(applockPopover);
+      renderAppLockSettingsPanel();
+    });
+
     document.getElementById("tile-color-back-btn").addEventListener("click", (e) => {
       e.stopPropagation();
       openOnly(menuPopover);
@@ -5652,11 +5936,237 @@
       openOnly(menuPopover);
     });
 
+    document.getElementById("applock-back-btn").addEventListener("click", (e) => {
+      e.stopPropagation();
+      openOnly(menuPopover);
+    });
+
     document.addEventListener("click", (e) => {
       const wrap = menuBtn.closest(".color-picker-wrap");
       if (!wrap.contains(e.target)) {
         closeAll();
       }
+    });
+  }
+
+  // ---------- App lock (local PIN) ----------
+  // Honest scope: this only stops someone from casually opening the app on
+  // an unlocked phone. The PIN is hashed (SHA-256 via Web Crypto) before
+  // being stored, so it isn't sitting in localStorage as plain text — but
+  // this is not real encryption of the underlying data, and anyone with
+  // direct access to the device's browser storage could still read the
+  // dashboard's data directly. The device's own passcode/Face ID remains
+  // the actual security boundary; this is a light deterrent on top of it.
+  const APPLOCK_HASH_KEY = "rounds_applock_hash_v1";
+  let lockEntry = "";
+  let lockMode = "unlock"; // "unlock" | "set-new" | "confirm-new"
+  let pendingNewPin = "";
+  let lockShakeTimer = null;
+
+  async function sha256Hex(text) {
+    const enc = new TextEncoder().encode(text);
+    const digest = await crypto.subtle.digest("SHA-256", enc);
+    return Array.from(new Uint8Array(digest)).map(b => b.toString(16).padStart(2, "0")).join("");
+  }
+
+  function loadPinHash() {
+    try {
+      return localStorage.getItem(APPLOCK_HASH_KEY);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function savePinHash(hash) {
+    try {
+      if (hash) localStorage.setItem(APPLOCK_HASH_KEY, hash);
+      else localStorage.removeItem(APPLOCK_HASH_KEY);
+    } catch (e) {
+      console.error("Failed to save app lock PIN", e);
+    }
+  }
+
+  function renderLockDots() {
+    const dotsEl = document.getElementById("lock-dots");
+    dotsEl.innerHTML = "";
+    const length = Math.max(lockEntry.length, 4);
+    for (let i = 0; i < Math.max(length, 4); i++) {
+      const dot = document.createElement("span");
+      dot.className = "lock-dot" + (i < lockEntry.length ? " filled" : "");
+      dotsEl.appendChild(dot);
+    }
+  }
+
+  function setLockError(msg) {
+    document.getElementById("lock-error").textContent = msg || "";
+  }
+
+  function shakeLock() {
+    const overlay = document.getElementById("lock-overlay");
+    overlay.classList.remove("shake");
+    void overlay.offsetWidth;
+    overlay.classList.add("shake");
+    clearTimeout(lockShakeTimer);
+    lockShakeTimer = setTimeout(() => overlay.classList.remove("shake"), 400);
+  }
+
+  function updateLockPrompt() {
+    const titleEl = document.getElementById("lock-title");
+    const subEl = document.getElementById("lock-sub");
+    if (lockMode === "set-new") {
+      titleEl.textContent = "Set a PIN";
+      subEl.textContent = "Choose a 4–6 digit PIN";
+    } else if (lockMode === "confirm-new") {
+      titleEl.textContent = "Confirm PIN";
+      subEl.textContent = "Enter it again to confirm";
+    } else {
+      titleEl.textContent = "Enter PIN";
+      subEl.textContent = "Unlock your dashboard";
+    }
+  }
+
+  async function handleLockSubmit() {
+    const pin = lockEntry;
+
+    if (lockMode === "set-new") {
+      pendingNewPin = pin;
+      lockEntry = "";
+      lockMode = "confirm-new";
+      updateLockPrompt();
+      renderLockDots();
+      return;
+    }
+
+    if (lockMode === "confirm-new") {
+      if (pin !== pendingNewPin) {
+        setLockError("PINs didn't match — try again");
+        shakeLock();
+        lockEntry = "";
+        pendingNewPin = "";
+        lockMode = "set-new";
+        updateLockPrompt();
+        renderLockDots();
+        return;
+      }
+      const hash = await sha256Hex(pin);
+      savePinHash(hash);
+      hideLockOverlay();
+      showToast("PIN set");
+      return;
+    }
+
+    // lockMode === "unlock"
+    const storedHash = loadPinHash();
+    const enteredHash = await sha256Hex(pin);
+    if (enteredHash === storedHash) {
+      hideLockOverlay();
+    } else {
+      setLockError("Incorrect PIN");
+      shakeLock();
+      lockEntry = "";
+      renderLockDots();
+    }
+  }
+
+  function showLockOverlay(mode) {
+    lockMode = mode;
+    lockEntry = "";
+    pendingNewPin = "";
+    setLockError("");
+    updateLockPrompt();
+    renderLockDots();
+    document.getElementById("lock-overlay").classList.add("visible");
+    document.getElementById("lock-overlay").setAttribute("aria-hidden", "false");
+  }
+
+  function hideLockOverlay() {
+    document.getElementById("lock-overlay").classList.remove("visible");
+    document.getElementById("lock-overlay").setAttribute("aria-hidden", "true");
+    document.documentElement.removeAttribute("data-locked");
+  }
+
+  function initLockScreen() {
+    let autoSubmitTimer = null;
+
+    document.querySelectorAll(".lock-key[data-key]").forEach(key => {
+      key.addEventListener("click", () => {
+        if (lockEntry.length >= 6) return;
+        lockEntry += key.getAttribute("data-key");
+        setLockError("");
+        renderLockDots();
+
+        // Auto-submit shortly after reaching 4+ digits (standard PIN UX).
+        // Debounced so it resets on every keypress, giving room for 5-6
+        // digit PINs to finish typing before submitting.
+        clearTimeout(autoSubmitTimer);
+        if (lockEntry.length >= 4) {
+          autoSubmitTimer = setTimeout(() => {
+            if (lockEntry.length >= 4) handleLockSubmit();
+          }, 350);
+        }
+      });
+    });
+
+    document.getElementById("lock-backspace").addEventListener("click", () => {
+      clearTimeout(autoSubmitTimer);
+      lockEntry = lockEntry.slice(0, -1);
+      setLockError("");
+      renderLockDots();
+    });
+
+    document.getElementById("lock-forgot-btn").addEventListener("click", () => {
+      const confirmed = window.confirm(
+        "Reset the app lock? This only removes the PIN on this device — it does not delete or restore any of your study data. You'll be asked to set a new PIN afterward, or you can leave the app unlocked."
+      );
+      if (!confirmed) return;
+      savePinHash(null);
+      hideLockOverlay();
+      showToast("PIN removed");
+    });
+  }
+
+  // Called at startup: if a PIN is set, show the unlock screen before the
+  // dashboard is usable. If not, the app opens normally with no lock.
+  function checkLockOnStartup() {
+    const hash = loadPinHash();
+    if (hash) {
+      showLockOverlay("unlock");
+    } else {
+      // Safety fallback: if data-locked was set by the early script but no
+      // hash actually exists (shouldn't normally happen), don't leave the
+      // app permanently hidden — just reveal it.
+      document.documentElement.removeAttribute("data-locked");
+    }
+  }
+
+  function renderAppLockSettingsPanel() {
+    const hash = loadPinHash();
+    const descEl = document.getElementById("applock-status-desc");
+    const setBtn = document.getElementById("applock-set-btn");
+    const removeBtn = document.getElementById("applock-remove-btn");
+
+    if (hash) {
+      descEl.textContent = "PIN is set — this app is locked when opened.";
+      setBtn.textContent = "Change PIN";
+      removeBtn.style.display = "block";
+    } else {
+      descEl.textContent = "No PIN set — anyone who opens this app can see everything.";
+      setBtn.textContent = "Set a PIN";
+      removeBtn.style.display = "none";
+    }
+  }
+
+  function initAppLockSettings() {
+    document.getElementById("applock-set-btn").addEventListener("click", () => {
+      showLockOverlay("set-new");
+    });
+
+    document.getElementById("applock-remove-btn").addEventListener("click", () => {
+      const confirmed = window.confirm("Remove the PIN? The app will open without asking for it from now on.");
+      if (!confirmed) return;
+      savePinHash(null);
+      renderAppLockSettingsPanel();
+      showToast("PIN removed");
     });
   }
 
@@ -5830,6 +6340,10 @@
       if (t) t.classList.remove("menu-open");
     });
   });
+
+  initLockScreen();
+  initAppLockSettings();
+  checkLockOnStartup();
 
   initCalendarState();
   initBgColorPicker();
