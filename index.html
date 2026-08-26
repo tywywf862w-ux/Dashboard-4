@@ -1,0 +1,6095 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>MBBS Dashboard — INI-CET / NEET-PG Subject Dashboard</title>
+
+<!-- PWA: manifest + theme color -->
+<link rel="manifest" href="./manifest.json" />
+<meta name="theme-color" content="#1c1c1a" />
+
+<!-- iOS-specific PWA tags (Safari does not read manifest.json for these) -->
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="MBBS Dashboard" />
+<link rel="apple-touch-icon" href="./icon-192.png" />
+
+<script>
+  // Applied before first paint to avoid a flash of the default background.
+  (function () {
+    try {
+      var saved = localStorage.getItem("rounds_bg_color_v1");
+      if (saved) {
+        document.documentElement.style.setProperty("--bg-page", saved);
+      }
+    } catch (e) {
+      // localStorage unavailable — default background applies as normal.
+    }
+  })();
+</script>
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,500&display=swap');
+
+  * { box-sizing: border-box; }
+
+  /* ---------- Global checkbox material treatment ---------- */
+  /* Applies a carved, embossed look to every checkbox in the app so they
+     match the tile/button material language instead of showing the plain
+     native OS checkbox. Per-context rules below (sizing, accent-color)
+     still layer on top of this for their specific placements. */
+  input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    position: relative;
+    background: linear-gradient(155deg, #fdfcf8 0%, #eee8db 100%);
+    border: 1px solid rgba(28,28,26,0.35);
+    border-radius: 4px;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.7) inset,
+      0 1px 2px rgba(28,28,26,0.18) inset;
+    transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
+  }
+
+  input[type="checkbox"]:hover {
+    border-color: rgba(28,28,26,0.55);
+  }
+
+  input[type="checkbox"]:active {
+    transform: scale(0.92);
+  }
+
+  input[type="checkbox"]:checked {
+    background: linear-gradient(155deg, #3a7a5a 0%, #2d6a4f 55%, #1f5138 100%);
+    border-color: #1a4530;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.25) inset,
+      0 -1px 2px rgba(0,0,0,0.3) inset,
+      0 1px 2px rgba(28,28,26,0.25);
+  }
+
+  input[type="checkbox"]:checked::after {
+    content: "";
+    position: absolute;
+    left: 28%;
+    top: 12%;
+    width: 28%;
+    height: 52%;
+    border: solid #f6f3ec;
+    border-width: 0 2px 2px 0;
+    transform: rotate(40deg);
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: var(--bg-page, #f6f3ec);
+    font-family: 'IBM Plex Mono', 'Courier New', monospace;
+    color: #1c1c1a;
+    transition: background-color 0.35s ease, color 0.35s ease;
+  }
+
+  header {
+    border-bottom: 2px solid #1c1c1a;
+    padding: 24px 24px 18px;
+    background: var(--bg-page, #f6f3ec);
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    transition: background-color 0.35s ease;
+  }
+
+  .header-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    position: relative;
+  }
+
+  .owner-name-badge {
+    position: absolute;
+    top: 0;
+    right: 0;
+    display: none;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px 5px 8px;
+    background: linear-gradient(155deg, #f4f4f2 0%, #dcdcda 30%, #b8b9bb 60%, #e8e8e7 100%);
+    border: 1px solid #8a8b8d;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #232324;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.6) inset,
+      0 1px 3px rgba(0,0,0,0.2);
+  }
+
+  .owner-name-badge.visible {
+    display: flex;
+  }
+
+  .owner-name-badge-avatar {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #1c1c1a;
+    color: #f6f3ec;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  @media (max-width: 560px) {
+    .owner-name-badge {
+      position: static;
+      margin-top: 8px;
+      align-self: flex-start;
+    }
+  }
+
+  .title-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: clamp(24px, 4vw, 36px);
+    letter-spacing: -0.01em;
+    margin: 0;
+    cursor: pointer;
+    color: #1c1c1a;
+    text-shadow:
+      0 1px 0 rgba(255,255,255,0.9),
+      0 2px 0 rgba(255,255,255,0.5),
+      0 4px 6px rgba(28,28,26,0.3),
+      0 1px 1px rgba(28,28,26,0.18);
+  }
+
+  h1 .dot { color: #8b2e3f; }
+
+  .eyebrow {
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    opacity: 0.65;
+    margin-top: 4px;
+  }
+
+  .creator-credit {
+    text-transform: none;
+    letter-spacing: 0.02em;
+    opacity: 0.75;
+    margin-left: 4px;
+  }
+
+  .inline-edit-btn {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 12px;
+    opacity: 0.35;
+    padding: 2px 4px;
+    vertical-align: middle;
+    color: inherit;
+    transition: opacity 0.15s ease, transform 0.1s ease;
+  }
+
+  .inline-edit-btn:hover {
+    opacity: 0.85;
+    transform: scale(1.15);
+  }
+
+  .inline-edit-btn:active {
+    transform: scale(0.95);
+  }
+
+  h1 .inline-edit-btn {
+    font-size: 15px;
+  }
+
+  .editable-text {
+    outline: none;
+    border-radius: 3px;
+    padding: 0 2px;
+  }
+
+  .editable-text[contenteditable="true"] {
+    background: #fffdf8;
+    box-shadow: 0 0 0 1.5px #1c1c1a;
+    cursor: text;
+  }
+
+  .eyebrow .editable-text[contenteditable="true"] {
+    box-shadow: 0 0 0 1.5px #1c1c1a55;
+  }
+
+  .subtitle {
+    margin: 6px 0 0;
+    font-size: 13px;
+    opacity: 0.65;
+    max-width: 600px;
+  }
+
+  .subtitle:empty {
+    margin: 0;
+    height: 0;
+  }
+
+  .timer-widget {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 14px;
+    width: 25%;
+    min-width: 280px;
+    margin: 0 0 16px;
+    background:
+      repeating-linear-gradient(180deg, rgba(255,255,255,0.015) 0px, rgba(255,255,255,0.015) 1px, transparent 1px, transparent 3px),
+      linear-gradient(155deg, #2b2c2f 0%, #1b1c1e 55%, #101112 100%);
+    border: 1px solid #45464a;
+    border-radius: 6px;
+    padding: 14px 18px;
+    position: relative;
+    overflow: hidden;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.08) inset,
+      0 -3px 8px rgba(0,0,0,0.45) inset,
+      0 5px 14px rgba(0,0,0,0.35);
+  }
+
+  /* Panel rivets — matches the date-strip's mechanical corner detail */
+  .timer-widget::before,
+  .timer-widget::after {
+    content: "";
+    position: absolute;
+    top: 7px;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #6a6c70, #232427 70%);
+    box-shadow: 0 1px 1px rgba(0,0,0,0.6);
+  }
+
+  .timer-widget::before { left: 8px; }
+  .timer-widget::after { right: 8px; }
+
+  .timer-left {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    background: rgba(0,0,0,0.28);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 4px;
+    padding: 6px 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.5) inset;
+    position: relative;
+    z-index: 1;
+  }
+
+  .timer-label {
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #7d8a94;
+    opacity: 0.85;
+  }
+
+  .timer-display {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: clamp(18px, 3.2vw, 26px);
+    font-weight: 600;
+    color: #5fd4e8;
+    text-shadow: 0 0 6px rgba(95,212,232,0.65), 0 0 14px rgba(95,212,232,0.3);
+    letter-spacing: 0.03em;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .timer-display.timer-running {
+    color: #6fd08c;
+    text-shadow: 0 0 6px rgba(111,208,140,0.65), 0 0 14px rgba(111,208,140,0.3);
+  }
+
+  .timer-display.timer-warning {
+    color: #ffa759;
+    text-shadow: 0 0 6px rgba(255,167,89,0.7), 0 0 16px rgba(255,167,89,0.35);
+  }
+
+  .timer-display.timer-done {
+    color: #e8697a;
+    text-shadow: 0 0 6px rgba(232,105,122,0.7), 0 0 16px rgba(232,105,122,0.35);
+  }
+
+  .timer-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    position: relative;
+    z-index: 1;
+  }
+
+  .timer-btn {
+    background: linear-gradient(155deg, #3d3d40 0%, #2f2f31 55%, #232325 100%);
+    color: #f4f4f2;
+    border: 1px solid #48484a;
+    border-radius: 5px;
+    padding: 7px 11px;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.1) inset,
+      0 -1px 3px rgba(0,0,0,0.3) inset,
+      0 1px 2px rgba(0,0,0,0.3);
+    transition: background 0.12s ease, transform 0.1s ease, box-shadow 0.1s ease;
+  }
+
+  .timer-btn:hover {
+    filter: brightness(1.15);
+    transform: translateY(-1px);
+  }
+  .timer-btn:active {
+    transform: translateY(1px);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.35) inset;
+  }
+
+  .timer-btn-primary {
+    background: linear-gradient(155deg, #5a9070 0%, #4a7a5c 55%, #3a6249 100%);
+    border-color: #5c9070;
+  }
+
+  .timer-btn-primary:hover { filter: brightness(1.12); }
+
+  .timer-btn-primary.is-running {
+    background: linear-gradient(155deg, #a3505a 0%, #8b3e46 55%, #6f2f36 100%);
+    border-color: #a3505a;
+  }
+
+  .timer-btn-primary.is-running:hover { filter: brightness(1.12); }
+
+  .timer-btn-icon {
+    padding: 9px 12px;
+    font-size: 15px;
+    line-height: 1;
+  }
+
+  .timer-settings-panel {
+    display: none;
+    flex-wrap: wrap;
+    gap: 14px;
+    align-items: center;
+    justify-content: space-between;
+    background: #f2ede0;
+    border: 1.5px solid #1c1c1a;
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin-bottom: 16px;
+    font-size: 13px;
+  }
+
+  .timer-settings-panel.visible {
+    display: flex;
+  }
+
+  .timer-settings-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .timer-settings-option {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    transition: opacity 0.12s ease;
+  }
+
+  .timer-settings-option:hover {
+    opacity: 0.75;
+  }
+
+  .timer-settings-option input {
+    cursor: pointer;
+  }
+
+  .timer-dur-label {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .timer-dur-input {
+    width: 46px;
+    font: inherit;
+    font-size: 13px;
+    border: 1px solid #1c1c1a55;
+    border-radius: 4px;
+    padding: 4px 5px;
+    text-align: center;
+    background: #fffdf8;
+    color: inherit;
+    box-shadow: 0 1px 2px rgba(28,28,26,0.06) inset;
+    transition: box-shadow 0.15s ease, border-color 0.15s ease;
+  }
+
+  .timer-dur-input:focus {
+    outline: none;
+    border-color: #1c1c1a;
+    box-shadow:
+      0 1px 3px rgba(28,28,26,0.15) inset,
+      0 1px 0 rgba(255,255,255,0.6);
+  }
+
+  @media (max-width: 560px) {
+    .timer-widget { flex-direction: column; align-items: stretch; }
+    .timer-left { align-items: center; text-align: center; }
+    .timer-controls { justify-content: center; }
+  }
+
+  .date-strip {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-top: 14px;
+    padding: 16px 20px;
+    background:
+      repeating-linear-gradient(180deg, rgba(255,255,255,0.015) 0px, rgba(255,255,255,0.015) 1px, transparent 1px, transparent 3px),
+      linear-gradient(155deg, #2b2c2f 0%, #1b1c1e 55%, #101112 100%);
+    border: 1px solid #45464a;
+    border-radius: 6px;
+    position: relative;
+    overflow: hidden;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.08) inset,
+      0 -3px 8px rgba(0,0,0,0.45) inset,
+      0 5px 14px rgba(0,0,0,0.35);
+  }
+
+  /* Panel rivets — small mechanical detail in each corner */
+  .date-strip::before,
+  .date-strip::after {
+    content: "";
+    position: absolute;
+    top: 7px;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #6a6c70, #232427 70%);
+    box-shadow: 0 1px 1px rgba(0,0,0,0.6);
+  }
+
+  .date-strip::before { left: 8px; }
+  .date-strip::after { right: 8px; }
+
+  /* ---------- HUD scan sweep — shared by the timer widget and date-strip ---------- */
+
+  .scan-sweep {
+    position: absolute;
+    top: 0;
+    left: -35%;
+    width: 22%;
+    height: 100%;
+    background: linear-gradient(
+      100deg,
+      transparent 0%,
+      rgba(95,212,232,0) 35%,
+      rgba(95,212,232,0.14) 50%,
+      rgba(95,212,232,0) 65%,
+      transparent 100%
+    );
+    pointer-events: none;
+    animation: scan-sweep-move 5.5s linear infinite;
+    z-index: 0;
+  }
+
+  @keyframes scan-sweep-move {
+    0% { left: -35%; }
+    100% { left: 113%; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .scan-sweep { display: none; }
+  }
+
+  .date-block {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    background: rgba(0,0,0,0.28);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 4px;
+    padding: 6px 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.5) inset;
+    position: relative;
+    z-index: 1;
+  }
+
+  .date-label {
+    font-size: 9px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #7d8a94;
+    opacity: 0.85;
+  }
+
+  .date-value {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 14px;
+    font-weight: 600;
+    color: #5fd4e8;
+    text-shadow: 0 0 6px rgba(95,212,232,0.65), 0 0 14px rgba(95,212,232,0.3);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.03em;
+  }
+
+  .exam-date-input {
+    font: inherit;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 14px;
+    font-weight: 600;
+    border: 1px solid rgba(95,212,232,0.3);
+    background: rgba(95,212,232,0.06);
+    color: #5fd4e8;
+    text-shadow: 0 0 6px rgba(95,212,232,0.65), 0 0 14px rgba(95,212,232,0.3);
+    padding: 2px 6px;
+    border-radius: 3px;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.4) inset;
+    transition: box-shadow 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+    color-scheme: dark;
+  }
+
+  .exam-date-input:hover {
+    border-color: rgba(95,212,232,0.55);
+    background: rgba(95,212,232,0.1);
+  }
+  .exam-date-input:focus {
+    outline: none;
+    border-color: #5fd4e8;
+    background: rgba(95,212,232,0.14);
+    box-shadow:
+      0 1px 3px rgba(0,0,0,0.4) inset,
+      0 0 0 2px rgba(95,212,232,0.22);
+  }
+
+  .countdown-block {
+    border-color: rgba(255,167,89,0.2);
+  }
+
+  .countdown-block .date-value {
+    color: #ffa759;
+    text-shadow: 0 0 6px rgba(255,167,89,0.7), 0 0 16px rgba(255,167,89,0.35);
+    font-weight: 700;
+  }
+
+  #today-display {
+    text-decoration: underline;
+    text-decoration-color: rgba(95,212,232,0.35);
+    text-underline-offset: 3px;
+    transition: text-decoration-color 0.15s ease;
+  }
+
+  #today-display:hover {
+    text-decoration-color: rgba(95,212,232,0.95);
+  }
+
+  .date-sep {
+    display: none;
+  }
+
+  .timer-toggle-strip {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .toggle-strip-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .timer-toggle-btn {
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(155deg, #f4f4f2 0%, #dcdcda 30%, #b8b9bb 60%, #e8e8e7 100%);
+    border: 1px solid #8a8b8d;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.7) inset,
+      0 -3px 6px rgba(0,0,0,0.15) inset,
+      0 2px 5px rgba(0,0,0,0.25);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .timer-toggle-btn:hover {
+    transform: translateY(-1px);
+  }
+
+  .timer-toggle-btn:active {
+    transform: translateY(1px);
+  }
+
+  .timer-toggle-btn svg {
+    width: 32px;
+    height: 32px;
+    stroke: #3a3a3c;
+  }
+
+  .timer-toggle-btn[aria-pressed="true"] {
+    background: linear-gradient(155deg, #2a2a2c 0%, #1c1c1e 60%, #131314 100%);
+    border-color: #3a3a3c;
+  }
+
+  .timer-toggle-btn[aria-pressed="true"] svg {
+    stroke: #6fd08c;
+  }
+
+  /* ---------- Revision shortcut icons — visually distinct from the timer toggle ---------- */
+
+  .shortcut-icon-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    position: relative;
+  }
+
+  .shortcut-icon-btn#open-revision-due-icon-btn {
+    background: linear-gradient(155deg, #f8ecc9 0%, #f0dda0 45%, #d8b869 100%);
+    border: 1px solid #9c6b1f;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.6) inset,
+      0 -3px 6px rgba(122,90,18,0.25) inset,
+      0 2px 5px rgba(122,90,18,0.3);
+  }
+
+  .shortcut-icon-btn#open-revision-due-icon-btn svg {
+    stroke: #7a5a12;
+  }
+
+  .shortcut-icon-btn#open-revision-backlog-icon-btn {
+    background: linear-gradient(155deg, #f4d6db 0%, #e8b3bc 45%, #c9707f 100%);
+    border: 1px solid #8b2e3f;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.6) inset,
+      0 -3px 6px rgba(139,46,63,0.25) inset,
+      0 2px 5px rgba(139,46,63,0.3);
+  }
+
+  .shortcut-icon-btn#open-revision-backlog-icon-btn svg {
+    stroke: #6e2333;
+  }
+
+  .shortcut-icon-btn.backup-icon-btn {
+    background: linear-gradient(155deg, #dfeaf4 0%, #b7cfe4 45%, #7fa3c2 100%);
+    border: 1px solid #4a6c8a;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.6) inset,
+      0 -3px 6px rgba(30,58,84,0.25) inset,
+      0 2px 5px rgba(30,58,84,0.3);
+  }
+
+  .shortcut-icon-btn.backup-icon-btn svg {
+    stroke: #29435c;
+  }
+
+  .shortcut-icon-btn:hover {
+    filter: brightness(1.05);
+  }
+
+  .shortcut-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    border-radius: 8px;
+    background: #1c1c1a;
+    color: #f6f3ec;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.4);
+  }
+
+  .shortcut-badge.visible {
+    display: flex;
+  }
+
+  /* ---------- Tile color picker ---------- */
+
+  .color-picker-wrap {
+    position: relative;
+  }
+
+  .color-swatch-btn {
+    padding: 0;
+  }
+
+  .color-swatch-dot {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.7);
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.25);
+    background: linear-gradient(155deg, #f4f4f2 0%, #dcdcda 22%, #b8b9bb 48%, #96979a 62%, #c2c3c5 78%, #e8e8e7 100%);
+  }
+
+  .color-picker-popover {
+    display: none;
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    background: linear-gradient(165deg, rgba(255,255,255,0.72) 0%, rgba(251,250,247,0.6) 100%);
+    backdrop-filter: blur(18px) saturate(160%);
+    -webkit-backdrop-filter: blur(18px) saturate(160%);
+    border: 1px solid rgba(255,255,255,0.5);
+    border-radius: 16px;
+    padding: 14px;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.7) inset,
+      0 16px 36px rgba(28,28,26,0.22),
+      0 3px 10px rgba(28,28,26,0.14);
+    z-index: 50;
+    width: 220px;
+  }
+
+  .color-picker-popover.visible {
+    display: block;
+  }
+
+  /* Fallback for browsers without backdrop-filter support (e.g. older
+     Firefox) — a solid panel so the popover stays fully readable. */
+  @supports not (backdrop-filter: blur(1px)) {
+    .color-picker-popover {
+      background: linear-gradient(165deg, #ffffff 0%, #fbfaf7 100%);
+      border-color: rgba(28,28,26,0.08);
+    }
+  }
+
+  .color-swatch-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    justify-items: center;
+  }
+
+  .color-swatch-option {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    position: relative;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.5) inset,
+      0 -2px 4px rgba(0,0,0,0.15) inset,
+      0 2px 4px rgba(0,0,0,0.25);
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+  }
+
+  .color-swatch-option:hover {
+    transform: scale(1.08) translateY(-1px);
+  }
+
+  .color-swatch-option:active {
+    transform: scale(1.02) translateY(0);
+  }
+
+  .color-swatch-option.selected::after {
+    content: "";
+    position: absolute;
+    inset: -5px;
+    border-radius: 50%;
+    border: 2.5px solid currentColor;
+  }
+
+  .color-swatch-option.custom-swatch {
+    background: #e9e9eb;
+    color: #6b6b6d;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+    font-weight: 400;
+    line-height: 1;
+  }
+
+  .color-swatch-option input[type="color"] {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+    border: none;
+    padding: 0;
+  }
+
+  /* ---------- Personal information popover ---------- */
+
+  .shortcut-icon-btn.profile-icon-btn {
+    background: linear-gradient(155deg, #e6e0f4 0%, #c9bce8 45%, #9c85c9 100%);
+    border: 1px solid #6e5a99;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.6) inset,
+      0 -3px 6px rgba(60,40,90,0.25) inset,
+      0 2px 5px rgba(60,40,90,0.3);
+  }
+
+  .shortcut-icon-btn.profile-icon-btn svg {
+    stroke: #3c2860;
+  }
+
+  .shortcut-icon-btn.profile-icon-btn[aria-expanded="true"] {
+    background: linear-gradient(155deg, #4a3670 0%, #3c2860 60%, #2a1c47 100%);
+    border-color: #2a1c47;
+  }
+
+  .shortcut-icon-btn.profile-icon-btn[aria-expanded="true"] svg {
+    stroke: #d6c8f0;
+  }
+
+  /* ---------- Background color picker ---------- */
+
+  .bg-color-btn {
+    position: relative;
+  }
+
+  .bg-swatch-dot {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 2px solid rgba(255,255,255,0.7);
+    box-shadow: 0 0 0 1px rgba(0,0,0,0.25);
+    background: #f6f3ec;
+  }
+
+  /* ---------- Settings menu (icon + colors + profile + backup) ---------- */
+
+  .settings-icon-btn {
+    background: linear-gradient(155deg, #eae6da 0%, #cfc9b8 45%, #a9a18a 100%);
+    border: 1px solid #7d7660;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.6) inset,
+      0 -3px 6px rgba(60,50,20,0.2) inset,
+      0 2px 5px rgba(60,50,20,0.25);
+  }
+
+  .settings-icon-btn svg {
+    stroke: #3f3a28;
+  }
+
+  .settings-menu-icon {
+    width: 20px;
+    height: 20px;
+    min-width: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.7;
+  }
+
+  .settings-menu-icon svg {
+    width: 16px;
+    height: 16px;
+    stroke: currentColor;
+  }
+
+  .backup-popover {
+    display: none;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .backup-popover.visible {
+    display: flex;
+  }
+
+  .backup-sync-status {
+    font-size: 10px;
+    opacity: 0.55;
+    margin: 0 0 4px;
+    padding: 0 8px;
+    line-height: 1.4;
+    word-break: break-word;
+  }
+
+  .backup-sync-status.synced {
+    color: #23663c;
+    opacity: 0.85;
+  }
+
+  .backup-divider {
+    height: 1px;
+    background: rgba(28,28,26,0.1);
+    margin: 4px 0 6px;
+  }
+
+  .color-menu-popover {
+    width: 200px;
+    padding: 8px;
+  }
+
+  .color-menu-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .color-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    padding: 9px 8px;
+    font: inherit;
+    font-size: 13px;
+    color: inherit;
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+    transition: background 0.12s ease, transform 0.1s ease;
+  }
+
+  .color-menu-item:hover {
+    background: rgba(242,237,224,0.6);
+    transform: translateX(2px);
+  }
+
+  .color-menu-item:active {
+    transform: translateX(2px) scale(0.98);
+  }
+
+  .color-menu-item .color-swatch-dot,
+  .color-menu-item .bg-swatch-dot {
+    width: 20px;
+    height: 20px;
+  }
+
+  .color-submenu-back {
+    display: block;
+    background: transparent;
+    border: none;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    color: inherit;
+    opacity: 0.6;
+    cursor: pointer;
+    padding: 0 0 10px;
+    transition: opacity 0.12s ease, transform 0.1s ease;
+  }
+
+  .color-submenu-back:hover {
+    opacity: 1;
+    transform: translateX(-2px);
+  }
+
+  .color-submenu-back:active {
+    transform: translateX(-2px) scale(0.96);
+  }
+
+  .profile-popover {
+    width: 240px;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .profile-popover.visible {
+    display: flex;
+  }
+
+  .profile-field {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  .profile-field label {
+    font-size: 10px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    opacity: 0.55;
+  }
+
+  .profile-field input {
+    font: inherit;
+    font-size: 13px;
+    border: 1px solid #1c1c1a33;
+    border-radius: 4px;
+    padding: 6px 8px;
+    color: inherit;
+    background: #fffdf8;
+    box-shadow: 0 1px 2px rgba(28,28,26,0.06) inset;
+    transition: box-shadow 0.15s ease, border-color 0.15s ease;
+  }
+
+  .profile-field input:focus {
+    outline: none;
+    border-color: #1c1c1a;
+    box-shadow:
+      0 1px 3px rgba(28,28,26,0.15) inset,
+      0 1px 0 rgba(255,255,255,0.6);
+  }
+
+  .profile-note {
+    font-size: 10px;
+    opacity: 0.5;
+    line-height: 1.4;
+    margin: 2px 0 0;
+  }
+
+  .timer-toggle-wrap {
+    overflow: hidden;
+    max-height: 400px;
+    opacity: 1;
+    transition: max-height 0.3s ease, opacity 0.25s ease, margin 0.3s ease;
+  }
+
+  .timer-toggle-wrap.collapsed {
+    max-height: 0;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .breadcrumb {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    margin-top: 10px;
+  }
+
+  .breadcrumb.visible { display: flex; }
+
+  .breadcrumb .back-btn {
+    background: linear-gradient(155deg, #34332f 0%, #232220 55%, #141312 100%);
+    color: #f6f3ec;
+    border: 1px solid #0c0c0b;
+    border-radius: 5px;
+    padding: 5px 10px;
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.12) inset,
+      0 -2px 4px rgba(0,0,0,0.4) inset,
+      0 2px 0 #050504,
+      0 3px 6px rgba(0,0,0,0.3);
+    transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
+  }
+
+  .breadcrumb .back-btn:hover {
+    filter: brightness(1.12);
+    transform: translateY(-1px);
+  }
+
+  .breadcrumb .back-btn:active {
+    transform: translateY(1px);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.08) inset,
+      0 -1px 2px rgba(0,0,0,0.45) inset,
+      0 0 0 #050504,
+      0 1px 2px rgba(0,0,0,0.25);
+  }
+
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 28px 24px 64px;
+  }
+
+  /* ---------- Subject list view ---------- */
+
+  #view-subjects.hidden,
+  #view-chapters.hidden,
+  #view-day.hidden {
+    display: none;
+  }
+
+  section.group { margin-bottom: 36px; }
+
+  .group-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+  }
+
+  .group-edit-btn {
+    font-size: 11px;
+  }
+
+  .dot-marker {
+    width: 10px;
+    height: 10px;
+    display: inline-block;
+    border-radius: 2px;
+  }
+
+  .group-header h2 {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 20px;
+    margin: 0;
+    color: #1c1c1a;
+    text-shadow:
+      0 1px 0 rgba(255,255,255,0.9),
+      0 2px 0 rgba(255,255,255,0.5),
+      0 3px 4px rgba(28,28,26,0.28),
+      0 1px 1px rgba(28,28,26,0.15);
+  }
+
+  .group-tag {
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    opacity: 0.5;
+    border: 1px solid #1c1c1a33;
+    border-radius: 3px;
+    padding: 2px 6px;
+  }
+
+  .rule {
+    flex: 1;
+    border-bottom: 1px dashed #1c1c1a33;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 14px;
+  }
+
+  /* Registering --bg-page as a typed <color> custom property is what
+     actually lets the browser interpolate it smoothly. Without this,
+     changing a custom property is treated as a discrete value swap even
+     when a `transition: background` rule is present on the element that
+     consumes it — so the fade would silently never happen. */
+  @property --bg-page {
+    syntax: '<color>';
+    inherits: true;
+    initial-value: #f6f3ec;
+  }
+
+  :root {
+    --tile-c1: #f4f4f2;
+    --tile-c2: #dcdcda;
+    --tile-c3: #b8b9bb;
+    --tile-c4: #96979a;
+    --tile-c5: #c2c3c5;
+    --tile-c6: #e8e8e7;
+    --tile-border: #8a8b8d;
+    --tile-edge: #6f7072;
+    --tile-shadow: rgba(0,0,0,0.35);
+    --tile-shadow-hover: rgba(0,0,0,0.4);
+    --tile-shadow-inset: rgba(0,0,0,0.18);
+    --tile-shadow-inset-hover: rgba(0,0,0,0.16);
+    --tile-shadow-inset-active: rgba(0,0,0,0.22);
+    --tile-shadow-active: rgba(0,0,0,0.3);
+    --tile-text: #1a1a1b;
+    --tile-text-soft: #2c2c2d;
+    --tile-outline: #1c1c1a;
+
+    --bg-page: #f6f3ec;
+    --bg-surface: #fffdf8;
+    --bg-subtle: #eee8db;
+    --bg-hover: #f2ede0;
+    --text-primary: #1c1c1a;
+    --text-primary-rgb: 28, 28, 26;
+    --border-strong: #1c1c1a;
+    --border-soft: rgba(28,28,26,0.2);
+    --border-faint: rgba(28,28,26,0.1);
+  }
+
+
+  .tile {
+    text-align: left;
+    background: linear-gradient(155deg, var(--tile-c1) 0%, var(--tile-c2) 22%, var(--tile-c3) 48%, var(--tile-c4) 62%, var(--tile-c5) 78%, var(--tile-c6) 100%);
+    border: 1px solid var(--tile-border);
+    border-radius: 6px;
+    padding: 14px 16px 12px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 14px;
+    font: inherit;
+    color: var(--tile-text);
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
+    width: 100%;
+    position: relative;
+    z-index: 1;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.75) inset,
+      0 -6px 10px var(--tile-shadow-inset) inset,
+      0 3px 0 var(--tile-edge),
+      0 6px 12px var(--tile-shadow);
+  }
+
+  /* Once a tile name is being edited, its text needs to be selectable
+     again so document.execCommand("selectAll") and normal typing work. */
+  .tile-name[contenteditable="true"] {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+
+  .tile.menu-open {
+    z-index: 40;
+  }
+
+  .tile::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 40%;
+    border-radius: 6px 6px 60% 60% / 6px 6px 100% 100%;
+    background: linear-gradient(180deg, rgba(255,255,255,0.55) 0%, rgba(255,255,255,0) 100%);
+    pointer-events: none;
+  }
+
+  .tile:hover, .tile:focus-visible {
+    transform: translateY(-3px);
+    filter: brightness(1.04);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.8) inset,
+      0 -6px 10px var(--tile-shadow-inset-hover) inset,
+      0 3px 0 var(--tile-edge),
+      0 10px 18px var(--tile-shadow-hover);
+  }
+
+  .tile:active {
+    transform: translateY(1px);
+    filter: brightness(0.97);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.5) inset,
+      0 -4px 8px var(--tile-shadow-inset-active) inset,
+      0 1px 0 var(--tile-edge),
+      0 2px 4px var(--tile-shadow-active);
+  }
+
+  .tile:focus-visible {
+    outline: 2px solid var(--tile-outline);
+    outline-offset: 2px;
+  }
+
+  .tile-content {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .tile-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .tile-name-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+    flex: 1;
+  }
+
+  /* ---------- Long-press context menu on subject tiles ---------- */
+
+  .tile-context-menu {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 12px;
+    background: linear-gradient(165deg, rgba(255,255,255,0.85) 0%, rgba(251,250,247,0.75) 100%);
+    backdrop-filter: blur(16px) saturate(160%);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+    border: 1px solid rgba(255,255,255,0.5);
+    border-radius: 10px;
+    padding: 6px;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.7) inset,
+      0 10px 24px rgba(28,28,26,0.22),
+      0 2px 8px rgba(28,28,26,0.14);
+    z-index: 30;
+    min-width: 140px;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .tile-context-menu.visible {
+    display: flex;
+  }
+
+  .tile-context-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 10px;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    color: #1c1c1a;
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+    transition: background 0.12s ease;
+  }
+
+  .tile-context-item:hover {
+    background: rgba(28,28,26,0.08);
+  }
+
+  .tile-context-item span {
+    font-size: 13px;
+    width: 16px;
+    text-align: center;
+  }
+
+  .tile-context-remove {
+    color: #8b2e3f;
+  }
+
+  /* ---------- Remove-confirmation panel on subject tiles ---------- */
+
+  .tile-confirm-remove {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 12px;
+    right: 12px;
+    background: linear-gradient(165deg, rgba(255,255,255,0.92) 0%, rgba(251,250,247,0.85) 100%);
+    backdrop-filter: blur(16px) saturate(160%);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+    border: 1px solid rgba(139,46,63,0.3);
+    border-radius: 10px;
+    padding: 12px;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.7) inset,
+      0 10px 24px rgba(28,28,26,0.22),
+      0 2px 8px rgba(28,28,26,0.14);
+    z-index: 30;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .tile-confirm-remove.visible {
+    display: flex;
+  }
+
+  .tile-confirm-text {
+    font-size: 12px;
+    line-height: 1.4;
+    color: #1c1c1a;
+    margin: 0;
+  }
+
+  .tile-confirm-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+
+  .tile-confirm-cancel,
+  .tile-confirm-delete {
+    font: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    border: none;
+    border-radius: 6px;
+    padding: 6px 12px;
+    cursor: pointer;
+    transition: filter 0.12s ease, transform 0.1s ease;
+  }
+
+  .tile-confirm-cancel {
+    background: rgba(28,28,26,0.08);
+    color: #1c1c1a;
+  }
+
+  .tile-confirm-delete {
+    background: #8b2e3f;
+    color: #fdf3f0;
+  }
+
+  .tile-confirm-cancel:hover,
+  .tile-confirm-delete:hover {
+    filter: brightness(1.1);
+    transform: translateY(-1px);
+  }
+
+  .tile-confirm-cancel:active,
+  .tile-confirm-delete:active {
+    transform: translateY(1px);
+  }
+
+  .tile-name {
+    font-weight: 700;
+    font-size: 15px;
+    line-height: 1.3;
+    color: var(--tile-text);
+    text-shadow: 0 1px 0 rgba(255,255,255,0.5);
+  }
+
+  .tile-name[contenteditable="true"] {
+    background: rgba(255,255,255,0.6);
+  }
+
+  .tile-edit-btn {
+    flex-shrink: 0;
+    font-size: 11px;
+  }
+
+  .tile-pct {
+    font-size: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+    margin-left: 8px;
+  }
+
+  .tile-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .tile-hint {
+    font-size: 11px;
+    opacity: 0.6;
+    letter-spacing: 0.03em;
+    color: var(--tile-text-soft);
+  }
+
+  .tile-progress-label {
+    font-size: 11px;
+    opacity: 0.75;
+    color: var(--tile-text-soft);
+  }
+
+  /* ---------- "+" add-subject tile ---------- */
+
+  .add-subject-tile {
+    background: repeating-linear-gradient(
+      135deg,
+      rgba(28,28,26,0.03) 0px, rgba(28,28,26,0.03) 10px,
+      transparent 10px, transparent 20px
+    ), #fffdf8;
+    border: 1.5px dashed rgba(28,28,26,0.3);
+    box-shadow: none;
+    justify-content: center;
+    min-height: 68px;
+  }
+
+  .add-subject-tile::before {
+    display: none;
+  }
+
+  .add-subject-tile:hover {
+    border-color: rgba(28,28,26,0.55);
+    background: repeating-linear-gradient(
+      135deg,
+      rgba(28,28,26,0.05) 0px, rgba(28,28,26,0.05) 10px,
+      transparent 10px, transparent 20px
+    ), #fdfaf3;
+    transform: translateY(-2px);
+  }
+
+  .add-subject-idle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: center;
+    width: 100%;
+    color: #1c1c1a;
+    opacity: 0.65;
+  }
+
+  .add-subject-tile.adding .add-subject-idle {
+    display: none;
+  }
+
+  .add-subject-plus {
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1;
+  }
+
+  .add-subject-label {
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .add-subject-form {
+    display: none;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .add-subject-tile.adding .add-subject-form {
+    display: flex;
+  }
+
+  .add-subject-form-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .add-subject-input {
+    flex: 1;
+    min-width: 0;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    border: 1px solid rgba(28,28,26,0.3);
+    border-radius: 4px;
+    padding: 6px 8px;
+    background: #fffdf8;
+    color: #1c1c1a;
+  }
+
+  .add-subject-input:focus {
+    outline: none;
+    border-color: #1c1c1a;
+  }
+
+  .add-subject-tile.has-duplicate-warning .add-subject-input {
+    border-color: #8b2e3f;
+    background: rgba(139,46,63,0.06);
+  }
+
+  .add-subject-warning {
+    font-size: 11px;
+    line-height: 1.4;
+    color: #8b2e3f;
+    background: rgba(139,46,63,0.08);
+    border: 1px solid rgba(139,46,63,0.25);
+    border-radius: 4px;
+    padding: 6px 8px;
+  }
+
+  .add-subject-actions {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+
+  .add-subject-confirm,
+  .add-subject-cancel {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.1s ease, filter 0.12s ease;
+  }
+
+  .add-subject-confirm {
+    background: #2d6a4f;
+    color: #fdf9f0;
+  }
+
+  .add-subject-cancel {
+    background: #eee8db;
+    color: #6b6558;
+  }
+
+  .add-subject-confirm:hover,
+  .add-subject-cancel:hover {
+    filter: brightness(1.1);
+    transform: translateY(-1px);
+  }
+
+  .add-subject-confirm:active,
+  .add-subject-cancel:active {
+    transform: translateY(1px);
+  }
+
+  /* ---------- Revision overview tiles (main page) ---------- */
+
+  .overview-grid {
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  }
+
+  .overview-count-badge {
+    min-width: 26px;
+    height: 26px;
+    padding: 0 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 13px;
+    font-size: 13px;
+    font-weight: 700;
+    background: #2d6a4f;
+    color: #fdf9f0;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.3) inset,
+      0 -2px 4px rgba(0,0,0,0.25) inset,
+      0 2px 4px rgba(0,0,0,0.25);
+    margin-left: 8px;
+  }
+
+  .overview-count-badge.overdue-badge {
+    background: #8b2e3f;
+  }
+
+  /* ---------- Circular revision progress ring ---------- */
+
+  .ring-wrap {
+    position: relative;
+    width: 52px;
+    height: 52px;
+    min-width: 52px;
+    z-index: 1;
+    filter: drop-shadow(0 1px 1px rgba(0,0,0,0.25));
+  }
+
+  .ring-svg {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+  }
+
+  .ring-track {
+    fill: none;
+    stroke: rgba(0,0,0,0.2);
+    stroke-width: 5;
+  }
+
+  .ring-fill {
+    fill: none;
+    stroke-width: 5;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .ring-label {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: #1a1a1b;
+  }
+
+  /* ---------- Calendar section (main page, lower section) ---------- */
+
+  .daily-section {
+    margin-top: 44px;
+    padding-top: 28px;
+    border-top: 2px solid #1c1c1a;
+  }
+
+  .daily-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+
+  .daily-title {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: clamp(22px, 3vw, 28px);
+    color: #1c1c1a;
+    text-shadow:
+      0 1px 0 rgba(255,255,255,0.9),
+      0 2px 0 rgba(255,255,255,0.5),
+      0 3px 5px rgba(28,28,26,0.3),
+      0 1px 1px rgba(28,28,26,0.15);
+  }
+
+  .daily-sub {
+    font-size: 12px;
+    opacity: 0.6;
+    margin: 4px 0 18px;
+  }
+
+  .cal-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+
+  .cal-nav {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .cal-nav-btn {
+    background: linear-gradient(155deg, #fffdf8 0%, #f2ede0 100%);
+    border: 1.5px solid #1c1c1a;
+    border-radius: 5px;
+    width: 30px;
+    height: 30px;
+    cursor: pointer;
+    font-size: 14px;
+    font: inherit;
+    line-height: 1;
+    color: inherit;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.8) inset,
+      0 2px 3px rgba(28,28,26,0.15);
+    transition: transform 0.12s ease, box-shadow 0.12s ease, background 0.12s ease;
+  }
+
+  .cal-nav-btn:hover {
+    background: linear-gradient(155deg, #fffdf8 0%, #eee8db 100%);
+    transform: translateY(-1px);
+  }
+
+  .cal-nav-btn:active {
+    transform: translateY(1px);
+    box-shadow: 0 1px 1px rgba(28,28,26,0.2) inset;
+  }
+
+  .cal-month-label {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 16px;
+    min-width: 150px;
+    text-align: center;
+  }
+
+  .cal-today-btn {
+    background: linear-gradient(155deg, #34332f 0%, #232220 55%, #141312 100%);
+    color: #f6f3ec;
+    border: 1px solid #0c0c0b;
+    border-radius: 5px;
+    padding: 6px 12px;
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.12) inset,
+      0 -2px 4px rgba(0,0,0,0.4) inset,
+      0 2px 0 #050504,
+      0 3px 6px rgba(0,0,0,0.3);
+    transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
+  }
+
+  .cal-today-btn:hover {
+    filter: brightness(1.12);
+    transform: translateY(-1px);
+  }
+
+  .cal-today-btn:active {
+    transform: translateY(1px);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.08) inset,
+      0 -1px 2px rgba(0,0,0,0.45) inset,
+      0 0 0 #050504,
+      0 1px 2px rgba(0,0,0,0.25);
+  }
+
+  .cal-grid {
+    border: 1.5px solid #1c1c1a;
+    border-radius: 4px;
+    overflow: hidden;
+    background: linear-gradient(160deg, #fbfaf6 0%, #f3f1ea 100%);
+  }
+
+  .cal-dow-row {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    background: #1c1c1a;
+  }
+
+  .cal-dow {
+    color: #f6f3ec;
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    text-align: center;
+    padding: 8px 4px;
+    font-weight: 600;
+  }
+
+  .cal-weeks {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .cal-week {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+  }
+
+  .cal-day {
+    min-height: 68px;
+    border-right: 1px solid #1c1c1a1a;
+    border-bottom: 1px solid #1c1c1a1a;
+    padding: 6px 6px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    text-align: left;
+    background: transparent;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+    position: relative;
+    transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
+  }
+
+  .cal-day:hover, .cal-day:focus-visible {
+    background: #fffdf8;
+    box-shadow: inset 0 0 0 1px #1c1c1a22, inset 0 2px 6px rgba(0,0,0,0.06);
+    transform: scale(1.03);
+    z-index: 1;
+  }
+
+  .cal-day:active {
+    transform: scale(0.98);
+    box-shadow: inset 0 2px 4px rgba(28,28,26,0.15);
+  }
+
+  .cal-day:focus-visible {
+    outline: 2px solid #1c1c1a;
+    outline-offset: -2px;
+  }
+
+  .cal-day:nth-child(7n) { border-right: none; }
+
+  .cal-day.outside {
+    opacity: 0.32;
+  }
+
+  .cal-day.today {
+    background: linear-gradient(160deg, rgba(139,46,63,0.06) 0%, rgba(139,46,63,0.01) 100%);
+  }
+
+  .cal-day.today::after {
+    content: "";
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #8b2e3f;
+    box-shadow: 0 0 0 2px rgba(139,46,63,0.2);
+  }
+
+  .cal-day.today .cal-daynum {
+    background: linear-gradient(155deg, #b3495c 0%, #8b2e3f 55%, #6e2333 100%);
+    color: #fdf3f0;
+    border-radius: 50%;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.35) inset,
+      0 -2px 4px rgba(0,0,0,0.25) inset,
+      0 2px 4px rgba(139,46,63,0.4);
+  }
+
+  .cal-daynum {
+    font-size: 12px;
+    font-weight: 600;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: background 0.15s ease;
+  }
+
+  .cal-day:hover .cal-daynum {
+    background: rgba(28,28,26,0.08);
+  }
+
+  .cal-day.today:hover .cal-daynum {
+    background: linear-gradient(155deg, #b3495c 0%, #8b2e3f 55%, #6e2333 100%);
+  }
+
+  .cal-entry-count {
+    font-size: 10px;
+    opacity: 0.7;
+    line-height: 1.3;
+  }
+
+  .cal-dot-row {
+    display: flex;
+    gap: 3px;
+    flex-wrap: wrap;
+  }
+
+  .cal-mini-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+  }
+
+  @keyframes cal-pct-pop-in {
+    0%   { transform: scale(0.4); opacity: 0; }
+    60%  { transform: scale(1.15); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  .cal-pct-badge {
+    font-size: 8px;
+    font-weight: 700;
+    line-height: 1;
+    padding: 2px 4px;
+    border-radius: 6px;
+    font-variant-numeric: tabular-nums;
+    animation: cal-pct-pop-in 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  .cal-pct-badge.empty {
+    background: #eee8db;
+    color: #8a8478;
+  }
+
+  .cal-pct-badge.partial {
+    background: #f4e2b8;
+    color: #7a5a12;
+  }
+
+  @keyframes cal-pct-full-glow {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(45,106,79,0.45); }
+    50%      { box-shadow: 0 0 0 3px rgba(45,106,79,0); }
+  }
+
+  .cal-pct-badge.full {
+    background: #cde5d3;
+    color: #23663c;
+    animation:
+      cal-pct-pop-in 0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+      cal-pct-full-glow 1.6s ease-out 0.35s 2;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cal-pct-badge,
+    .cal-pct-badge.full {
+      animation: none;
+    }
+  }
+
+  .cal-day-top-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 4px;
+  }
+
+  /* ---------- Chapter / Day detail views ---------- */
+
+  .subject-title-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+
+  .subject-title {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: clamp(24px, 3.4vw, 32px);
+    text-shadow:
+      0 1px 0 rgba(255,255,255,0.9),
+      0 2px 0 rgba(255,255,255,0.5),
+      0 4px 6px rgba(28,28,26,0.3),
+      0 1px 1px rgba(28,28,26,0.18);
+  }
+
+  .subject-stats {
+    display: flex;
+    gap: 18px;
+    font-size: 12px;
+    opacity: 0.7;
+    margin: 6px 0 22px;
+    flex-wrap: wrap;
+  }
+
+  .subject-stats strong { opacity: 1; }
+
+  .toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  .add-btn {
+    background: linear-gradient(155deg, #34332f 0%, #232220 55%, #141312 100%);
+    color: #f6f3ec;
+    border: 1px solid #0c0c0b;
+    border-radius: 5px;
+    padding: 8px 14px;
+    font: inherit;
+    font-size: 13px;
+    cursor: pointer;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.12) inset,
+      0 -2px 4px rgba(0,0,0,0.4) inset,
+      0 2px 0 #050504,
+      0 3px 6px rgba(0,0,0,0.3);
+    transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
+  }
+
+  .add-btn:hover {
+    filter: brightness(1.12);
+    transform: translateY(-1px);
+  }
+
+  .add-btn:active {
+    transform: translateY(1px);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.08) inset,
+      0 -1px 2px rgba(0,0,0,0.45) inset,
+      0 0 0 #050504,
+      0 1px 2px rgba(0,0,0,0.25);
+  }
+
+  .save-note {
+    font-size: 11px;
+    opacity: 0.5;
+  }
+
+  .table-wrap {
+    border: 1.5px solid #1c1c1a;
+    border-radius: 6px;
+    overflow: auto;
+    background: #fffdf8;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.7) inset,
+      0 2px 6px rgba(28,28,26,0.1);
+  }
+
+  /* ---------- Custom scrollbars (Webkit + Firefox) ---------- */
+
+  .table-wrap,
+  .cal-weeks {
+    scrollbar-width: thin;
+    scrollbar-color: #9c9d9f #eee8db;
+  }
+
+  .table-wrap::-webkit-scrollbar {
+    height: 8px;
+    width: 8px;
+  }
+
+  .table-wrap::-webkit-scrollbar-track {
+    background: #eee8db;
+    border-radius: 4px;
+  }
+
+  .table-wrap::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #b8b9bb, #86878a);
+    border-radius: 4px;
+    border: 1px solid #6f7072;
+  }
+
+  .table-wrap::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #c5c6c8, #96979a);
+  }
+
+  .table-wrap::-webkit-scrollbar-corner {
+    background: #eee8db;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+
+  thead th {
+    text-align: left;
+    background: linear-gradient(180deg, #2a2a28 0%, #1c1c1a 55%, #131311 100%);
+    color: #f6f3ec;
+    font-weight: 600;
+    font-size: 11px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    padding: 10px 12px;
+    white-space: nowrap;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.08) inset;
+  }
+
+  tbody tr {
+    border-top: 1px solid #1c1c1a22;
+  }
+
+  tbody tr:hover {
+    background: #f2ede0;
+  }
+
+  td {
+    padding: 8px 10px;
+    vertical-align: middle;
+  }
+
+  td input[type="text"],
+  td input[type="number"],
+  td input[type="date"] {
+    width: 100%;
+    border: 1px solid rgba(28,28,26,0.12);
+    background: rgba(28,28,26,0.025);
+    font: inherit;
+    font-size: 13px;
+    color: inherit;
+    padding: 5px 6px;
+    border-radius: 4px;
+    box-shadow:
+      0 1px 2px rgba(28,28,26,0.08) inset,
+      0 1px 0 rgba(255,255,255,0.5);
+    transition: box-shadow 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+  }
+
+  td input[type="number"] { width: 64px; }
+
+  td input:hover {
+    border-color: #1c1c1a33;
+    background: rgba(28,28,26,0.04);
+  }
+
+  td input:focus {
+    outline: none;
+    border-color: #1c1c1a;
+    background: #fff;
+    box-shadow:
+      0 1px 3px rgba(28,28,26,0.18) inset,
+      0 1px 0 rgba(255,255,255,0.6);
+  }
+
+  .chapter-name-cell input {
+    font-weight: 600;
+    min-width: 160px;
+  }
+
+  select.revision-select,
+  select.subject-select {
+    font: inherit;
+    font-size: 12px;
+    border: 1px solid #1c1c1a33;
+    border-radius: 4px;
+    padding: 5px 6px;
+    background: #fff;
+    color: inherit;
+    width: 100%;
+    box-shadow:
+      0 1px 2px rgba(28,28,26,0.1) inset,
+      0 1px 0 rgba(255,255,255,0.5);
+    transition: box-shadow 0.15s ease, border-color 0.15s ease;
+  }
+
+  select.revision-select:hover,
+  select.subject-select:hover {
+    border-color: #1c1c1a55;
+  }
+
+  select.revision-select:focus,
+  select.subject-select:focus {
+    outline: none;
+    border-color: #1c1c1a;
+    box-shadow:
+      0 1px 3px rgba(28,28,26,0.15) inset,
+      0 1px 0 rgba(255,255,255,0.6);
+  }
+
+  /* ---------- Revised pulse / checkmark celebration ---------- */
+
+  @keyframes revised-row-pulse {
+    0%   { background-color: transparent; }
+    18%  { background-color: rgba(111, 208, 140, 0.35); }
+    100% { background-color: transparent; }
+  }
+
+  tr.revised-pulse {
+    animation: revised-row-pulse 1.1s ease-out;
+  }
+
+  .revision-cell-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+  }
+
+  @keyframes check-pop-in {
+    0%   { transform: scale(0) rotate(-10deg); opacity: 0; }
+    55%  { transform: scale(1.25) rotate(4deg); opacity: 1; }
+    75%  { transform: scale(0.95) rotate(-2deg); }
+    100% { transform: scale(1) rotate(0deg); opacity: 1; }
+  }
+
+  @keyframes check-fade-out {
+    0%   { opacity: 1; transform: scale(1); }
+    70%  { opacity: 1; transform: scale(1); }
+    100% { opacity: 0; transform: scale(0.85); }
+  }
+
+  .revised-check {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    min-width: 18px;
+    margin-left: 6px;
+    border-radius: 50%;
+    background: #2d6a4f;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1;
+    animation: check-pop-in 0.45s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
+               check-fade-out 1.6s ease-in forwards;
+    animation-delay: 0s, 0.9s;
+    pointer-events: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    tr.revised-pulse { animation: none; }
+    .revised-check { animation: none; opacity: 1; }
+  }
+
+  .del-btn {
+    background: transparent;
+    border: none;
+    color: #8b2e3f;
+    cursor: pointer;
+    font-size: 15px;
+    padding: 4px 6px;
+    line-height: 1;
+    transition: opacity 0.12s ease, transform 0.1s ease;
+  }
+
+  .del-btn:hover {
+    opacity: 0.6;
+    transform: scale(1.15);
+  }
+
+  .del-btn:active {
+    transform: scale(0.9);
+  }
+
+  /* ---------- Per-chapter link control ---------- */
+
+  .chapter-link-wrap {
+    position: relative;
+    display: flex;
+    justify-content: center;
+  }
+
+  .chapter-link-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: 1px solid rgba(28,28,26,0.2);
+    background: rgba(28,28,26,0.03);
+    color: #6b6558;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.12s ease, border-color 0.12s ease, transform 0.1s ease, color 0.12s ease;
+  }
+
+  .chapter-link-btn svg {
+    width: 15px;
+    height: 15px;
+    stroke: currentColor;
+  }
+
+  .chapter-link-btn:hover {
+    background: rgba(28,28,26,0.08);
+    transform: translateY(-1px);
+  }
+
+  .chapter-link-btn:active {
+    transform: translateY(1px);
+  }
+
+  .chapter-link-btn.has-link {
+    background: linear-gradient(155deg, #dfeaf4 0%, #b7cfe4 60%, #8fb3d3 100%);
+    border-color: #4a6c8a;
+    color: #1e3a54;
+  }
+
+  .chapter-link-popover {
+    display: none;
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    background: linear-gradient(165deg, rgba(255,255,255,0.94) 0%, rgba(251,250,247,0.88) 100%);
+    backdrop-filter: blur(16px) saturate(160%);
+    -webkit-backdrop-filter: blur(16px) saturate(160%);
+    border: 1px solid rgba(255,255,255,0.5);
+    border-radius: 12px;
+    padding: 12px;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.7) inset,
+      0 12px 28px rgba(28,28,26,0.2),
+      0 3px 10px rgba(28,28,26,0.12);
+    z-index: 30;
+    width: 240px;
+    flex-direction: column;
+    gap: 8px;
+    text-align: left;
+  }
+
+  .chapter-link-popover.visible {
+    display: flex;
+  }
+
+  .chapter-link-label {
+    font-size: 10px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    opacity: 0.55;
+  }
+
+  .chapter-link-input {
+    font: inherit;
+    font-size: 12px;
+    border: 1px solid rgba(28,28,26,0.25);
+    border-radius: 5px;
+    padding: 6px 8px;
+    background: #fffdf8;
+    color: #1c1c1a;
+  }
+
+  .chapter-link-input:focus {
+    outline: none;
+    border-color: #1c1c1a;
+  }
+
+  .chapter-link-actions {
+    display: flex;
+    gap: 6px;
+  }
+
+  .chapter-link-actions button {
+    flex: 1;
+    font: inherit;
+    font-size: 11px;
+    font-weight: 600;
+    border: none;
+    border-radius: 5px;
+    padding: 6px 8px;
+    cursor: pointer;
+    transition: filter 0.12s ease, transform 0.1s ease, opacity 0.12s ease;
+  }
+
+  .chapter-link-open,
+  .chapter-link-copy {
+    background: rgba(28,28,26,0.08);
+    color: #1c1c1a;
+  }
+
+  .chapter-link-save {
+    background: #1c1c1a;
+    color: #f6f3ec;
+  }
+
+  .chapter-link-actions button:hover {
+    filter: brightness(1.1);
+    transform: translateY(-1px);
+  }
+
+  .chapter-link-actions button:active {
+    transform: translateY(1px);
+  }
+
+  .chapter-link-actions button:disabled {
+    opacity: 0.4;
+    cursor: default;
+    transform: none;
+    filter: none;
+  }
+
+  .chapter-link-divider {
+    height: 1px;
+    background: rgba(28,28,26,0.1);
+    margin: 2px 0;
+  }
+
+  .chapter-link-hint {
+    font-size: 10.5px;
+    line-height: 1.4;
+    opacity: 0.6;
+    margin: -2px 0 0;
+  }
+
+  .chapter-link-copy-deep {
+    font: inherit;
+    font-size: 11px;
+    font-weight: 600;
+    border: none;
+    border-radius: 5px;
+    padding: 7px 8px;
+    cursor: pointer;
+    background: linear-gradient(155deg, #dfeaf4 0%, #b7cfe4 60%, #8fb3d3 100%);
+    color: #1e3a54;
+    transition: filter 0.12s ease, transform 0.1s ease;
+  }
+
+  .chapter-link-copy-deep:hover {
+    filter: brightness(1.08);
+    transform: translateY(-1px);
+  }
+
+  .chapter-link-copy-deep:active {
+    transform: translateY(1px);
+  }
+
+  .empty-state {
+    padding: 40px 20px;
+    text-align: center;
+    opacity: 0.55;
+    font-size: 13px;
+  }
+
+  /* ---------- Illustrated empty state (no chapters yet) ---------- */
+
+  .empty-state-rich {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 44px 20px 36px;
+    text-align: center;
+  }
+
+  .empty-state-icon {
+    width: 56px;
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: linear-gradient(155deg, #f4f4f2 0%, #dcdcda 30%, #b8b9bb 60%, #e8e8e7 100%);
+    border: 1px solid #8a8b8d;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.7) inset,
+      0 -4px 8px rgba(0,0,0,0.15) inset,
+      0 2px 6px rgba(0,0,0,0.25);
+  }
+
+  .empty-state-icon svg {
+    width: 26px;
+    height: 26px;
+    stroke: #4a4a4c;
+  }
+
+  .empty-state-title {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 15px;
+    color: #232324;
+    margin: 2px 0 0;
+  }
+
+  .empty-state-desc {
+    font-size: 12px;
+    opacity: 0.6;
+    max-width: 320px;
+    line-height: 1.5;
+  }
+
+  .empty-state-cta {
+    margin-top: 6px;
+    background: linear-gradient(155deg, #34332f 0%, #232220 55%, #141312 100%);
+    color: #f6f3ec;
+    border: 1px solid #0c0c0b;
+    border-radius: 5px;
+    padding: 8px 16px;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.12) inset,
+      0 -2px 4px rgba(0,0,0,0.4) inset,
+      0 2px 0 #050504,
+      0 3px 6px rgba(0,0,0,0.3);
+    transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.12s ease;
+  }
+
+  .empty-state-cta:hover {
+    filter: brightness(1.12);
+    transform: translateY(-1px);
+  }
+
+  .empty-state-cta:active {
+    transform: translateY(1px);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.08) inset,
+      0 -1px 2px rgba(0,0,0,0.45) inset,
+      0 0 0 #050504,
+      0 1px 2px rgba(0,0,0,0.25);
+  }
+
+  .daily-row-done td { opacity: 0.5; }
+
+  /* ---------- Spaced revision dashboard ---------- */
+
+  .rev-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    min-width: 92px;
+  }
+
+  .rev-cell input[type="date"] {
+    font-size: 11px;
+    text-align: center;
+    padding: 3px 2px;
+  }
+
+  .rev-cell.overdue input[type="date"] {
+    color: #8b2e3f;
+  }
+
+  .rev-check-row {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 10px;
+    opacity: 0.7;
+  }
+
+  .rev-check-row input[type="checkbox"] {
+    width: 13px;
+    height: 13px;
+    cursor: pointer;
+  }
+
+  .rev-cell.no-base {
+    opacity: 0.35;
+  }
+
+  .rev-cell.no-base input[type="date"] {
+    pointer-events: none;
+  }
+
+  .rev-legend {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    font-size: 11px;
+    opacity: 0.65;
+    margin-bottom: 14px;
+  }
+
+  .rev-legend strong { opacity: 1; }
+
+  /* ---------- Chapters due for revision (main page) ---------- */
+
+  .stage-pill {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+    background: #eee8db;
+  }
+
+  .due-status {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 10px;
+  }
+
+  .due-status.pending { background: #f4e2b8; color: #7a5a12; }
+  .due-status.done { background: #cde5d3; color: #23663c; }
+  .due-status.overdue { background: #f4c8ce; color: #8b2e3f; }
+
+  .due-status-check {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 3px 10px 3px 8px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: filter 0.12s ease, transform 0.1s ease;
+  }
+
+  .due-status-check input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    cursor: pointer;
+    accent-color: #2d6a4f;
+  }
+
+  .due-status-check.pending { background: #f4e2b8; color: #7a5a12; }
+  .due-status-check.overdue { background: #f4c8ce; color: #8b2e3f; }
+  .due-status-check.done { background: #cde5d3; color: #23663c; }
+
+  .due-status-check:hover {
+    filter: brightness(0.96);
+    transform: translateY(-1px);
+  }
+
+  .due-status-check:active {
+    transform: translateY(0);
+    filter: brightness(0.92);
+  }
+
+  .mark-done-btn {
+    background: #1c1c1a;
+    color: #f6f3ec;
+    border: none;
+    border-radius: 4px;
+    padding: 4px 10px;
+    font: inherit;
+    font-size: 11px;
+    cursor: pointer;
+    transition: opacity 0.12s ease, transform 0.1s ease;
+  }
+
+  .mark-done-btn:hover {
+    opacity: 0.85;
+    transform: translateY(-1px);
+  }
+
+  .mark-done-btn:active {
+    transform: translateY(1px);
+    opacity: 0.75;
+  }
+
+  .mark-done-btn:disabled {
+    opacity: 0.35;
+    cursor: default;
+    transform: none;
+  }
+
+  .field-with-check {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .field-with-check input[type="text"],
+  .field-with-check input[type="number"],
+  .field-with-check select {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .field-done-check {
+    width: 16px;
+    height: 16px;
+    min-width: 16px;
+    cursor: pointer;
+    accent-color: #2d6a4f;
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1c1c1a;
+    color: #f6f3ec;
+    padding: 10px 18px;
+    border-radius: 6px;
+    display: none;
+    align-items: center;
+    gap: 14px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+    max-width: 92vw;
+    font-size: 12px;
+    z-index: 30;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+  }
+
+  .toast.visible { display: flex; opacity: 1; }
+
+  @media (max-width: 700px) {
+    .table-wrap { overflow-x: auto; }
+    table { min-width: 620px; }
+    .cal-day { min-height: 54px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .tile, .toast, .cal-day { transition: none; }
+    .tile:hover { transform: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="owner-name-badge" id="owner-name-badge">
+      <span class="owner-name-badge-avatar" id="owner-name-avatar">?</span>
+      <span id="owner-name-text"></span>
+    </div>
+
+    <div class="timer-toggle-wrap" id="timer-toggle-wrap">
+      <div class="timer-widget" id="timer-widget">
+        <span class="scan-sweep" aria-hidden="true"></span>
+        <div class="timer-left">
+          <span class="timer-label" id="timer-mode-label">Stopwatch</span>
+          <span class="timer-display" id="timer-display">00:00:00</span>
+        </div>
+        <div class="timer-controls">
+          <button class="timer-btn timer-btn-primary" id="timer-start-btn">Start</button>
+          <button class="timer-btn" id="timer-reset-btn" title="Reset timer">Reset</button>
+          <button class="timer-btn timer-btn-icon" id="timer-settings-btn" title="Set timer duration" aria-label="Timer settings">&#9881;</button>
+        </div>
+      </div>
+
+      <div class="timer-settings-panel" id="timer-settings-panel">
+        <div class="timer-settings-row">
+          <label class="timer-settings-option">
+            <input type="radio" name="timer-mode" value="stopwatch" id="mode-stopwatch" checked />
+            Stopwatch (count up)
+          </label>
+          <label class="timer-settings-option">
+            <input type="radio" name="timer-mode" value="countdown" id="mode-countdown" />
+            Countdown
+          </label>
+        </div>
+        <div class="timer-settings-row" id="timer-duration-row">
+          <label class="timer-dur-label">Set duration:
+            <input type="number" min="0" max="23" value="0" id="timer-hours" class="timer-dur-input" /> h
+            <input type="number" min="0" max="59" value="25" id="timer-minutes" class="timer-dur-input" /> m
+            <input type="number" min="0" max="59" value="0" id="timer-seconds" class="timer-dur-input" /> s
+          </label>
+          <button class="timer-btn timer-btn-primary" id="timer-apply-btn">Apply</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="title-row">
+      <h1 id="home-link">
+        <span class="editable-text" id="main-title-text" contenteditable="false" spellcheck="false">MBBS Dashboard</span><span class="dot">.</span>
+        <button class="inline-edit-btn" id="edit-title-btn" title="Edit dashboard title" aria-label="Edit dashboard title">&#9998;</button>
+      </h1>
+    </div>
+    <div class="eyebrow">
+      <strong class="editable-text" id="exam-name-1-text" contenteditable="false" spellcheck="false">INI-CET</strong>
+      <button class="inline-edit-btn" id="edit-exam-names-btn" title="Edit exam name" aria-label="Edit exam name">&#9998;</button>
+      <span class="creator-credit">&middot; Created by Dr Sushant Kumar</span>
+    </div>
+    <p class="subtitle" id="header-subtitle"></p>
+
+    <div class="date-strip" id="date-strip">
+      <span class="scan-sweep" aria-hidden="true"></span>
+      <div class="date-block">
+        <span class="date-label">Today</span>
+        <span class="date-value" id="today-display"></span>
+      </div>
+      <div class="date-sep"></div>
+      <div class="date-block">
+        <span class="date-label">Calendar showing</span>
+        <span class="date-value" id="calendar-sync-display"></span>
+      </div>
+      <div class="date-sep"></div>
+      <div class="date-block">
+        <span class="date-label">Exam date</span>
+        <input type="date" class="exam-date-input" id="exam-date-input" />
+      </div>
+      <div class="date-sep"></div>
+      <div class="date-block countdown-block">
+        <span class="date-label">Days remaining</span>
+        <span class="date-value" id="countdown-display">—</span>
+      </div>
+    </div>
+
+    <div class="timer-toggle-strip" id="timer-toggle-strip">
+      <div class="toggle-strip-group">
+        <button class="timer-toggle-btn" id="timer-toggle-btn" title="Show/hide study timer" aria-label="Toggle study timer widget" aria-pressed="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="13" r="8"></circle>
+            <path d="M12 9v4l3 2"></path>
+            <path d="M9 2h6"></path>
+            <path d="M18.5 5.5l1.5-1.5"></path>
+          </svg>
+        </button>
+
+        <button class="timer-toggle-btn shortcut-icon-btn" id="open-revision-due-icon-btn" title="Open Chapters Due for Revision" aria-label="Open Chapters Due for Revision">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 11l2 2 4-4"></path>
+            <rect x="3" y="4" width="18" height="17" rx="2"></rect>
+            <path d="M3 9h18"></path>
+          </svg>
+          <span class="shortcut-badge" id="shortcut-due-badge"></span>
+        </button>
+
+        <button class="timer-toggle-btn shortcut-icon-btn" id="open-revision-backlog-icon-btn" title="Open Revision Backlog" aria-label="Open Revision Backlog">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="8.5"></circle>
+            <path d="M12 7.5v5l3.5 2"></path>
+          </svg>
+          <span class="shortcut-badge" id="shortcut-backlog-badge"></span>
+        </button>
+
+        <div class="color-picker-wrap">
+          <button class="timer-toggle-btn shortcut-icon-btn settings-icon-btn" id="settings-menu-btn" title="Settings" aria-label="Open settings" aria-expanded="false">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.04 1.56V21a2 2 0 0 1-4 0v-.09A1.7 1.7 0 0 0 9 19.37a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.63 15a1.7 1.7 0 0 0-1.56-1.04H3a2 2 0 0 1 0-4h.09A1.7 1.7 0 0 0 4.63 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.63a1.7 1.7 0 0 0 1.04-1.56V3a2 2 0 0 1 4 0v.09A1.7 1.7 0 0 0 15 4.63a1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.37 9a1.7 1.7 0 0 0 1.56 1.04H21a2 2 0 0 1 0 4h-.09A1.7 1.7 0 0 0 19.4 15Z"></path>
+            </svg>
+          </button>
+
+          <!-- Settings main menu -->
+          <div class="color-picker-popover color-menu-popover" id="settings-menu-popover">
+            <div class="color-menu-list">
+              <button class="color-menu-item" id="open-profile-panel-btn">
+                <span class="settings-menu-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="8" r="4"></circle>
+                    <path d="M4 20c0-4.4 3.6-7 8-7s8 2.6 8 7"></path>
+                  </svg>
+                </span>
+                <span>Personal info</span>
+              </button>
+              <button class="color-menu-item" id="open-tile-color-btn">
+                <span class="color-swatch-dot" id="tile-color-dot"></span>
+                <span>Tile color</span>
+              </button>
+              <button class="color-menu-item" id="open-bg-color-btn">
+                <span class="bg-swatch-dot" id="bg-color-dot"></span>
+                <span>Background color</span>
+              </button>
+              <button class="color-menu-item" id="open-backup-panel-btn">
+                <span class="settings-menu-icon">
+                  <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 3v12"></path>
+                    <path d="M7 10l5 5 5-5"></path>
+                    <path d="M4 19h16"></path>
+                  </svg>
+                </span>
+                <span>Backup &amp; restore</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Personal info sub-panel -->
+          <div class="color-picker-popover profile-popover" id="profile-popover">
+            <button class="color-submenu-back" id="profile-back-btn">&larr; Back</button>
+            <div class="profile-field">
+              <label for="profile-name-input">Name</label>
+              <input type="text" id="profile-name-input" placeholder="Your name" autocomplete="off" />
+            </div>
+            <div class="profile-field">
+              <label for="profile-work-input">Work</label>
+              <input type="text" id="profile-work-input" placeholder="e.g. MBBS intern" autocomplete="off" />
+            </div>
+            <div class="profile-field">
+              <label for="profile-phone-input">Phone number</label>
+              <input type="tel" id="profile-phone-input" placeholder="Phone number" autocomplete="off" />
+            </div>
+            <div class="profile-field">
+              <label for="profile-email-input">Email</label>
+              <input type="email" id="profile-email-input" placeholder="Email" autocomplete="off" />
+            </div>
+            <p class="profile-note">Saved on this device only. Name shows in the top-right corner once set.</p>
+          </div>
+
+          <!-- Tile color sub-panel -->
+          <div class="color-picker-popover" id="color-picker-popover">
+            <button class="color-submenu-back" id="tile-color-back-btn">&larr; Back</button>
+            <div class="color-swatch-grid" id="color-swatch-grid"></div>
+          </div>
+
+          <!-- Background color sub-panel -->
+          <div class="color-picker-popover" id="bg-color-popover">
+            <button class="color-submenu-back" id="bg-color-back-btn">&larr; Back</button>
+            <div class="color-swatch-grid" id="bg-color-swatch-grid"></div>
+          </div>
+
+          <!-- Backup & restore sub-panel -->
+          <div class="color-picker-popover backup-popover" id="backup-popover">
+            <button class="color-submenu-back" id="backup-back-btn">&larr; Back</button>
+
+            <button class="color-menu-item" id="sync-backup-btn">
+              <span class="settings-menu-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 12a9 9 0 1 1-3-6.7"></path>
+                  <path d="M21 4v5h-5"></path>
+                </svg>
+              </span>
+              <span>Sync now</span>
+            </button>
+            <p class="backup-sync-status" id="backup-sync-status">Not synced yet</p>
+
+            <div class="backup-divider"></div>
+
+            <button class="color-menu-item" id="export-backup-btn">
+              <span class="settings-menu-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 3v12"></path>
+                  <path d="M7 10l5 5 5-5"></path>
+                  <path d="M4 19h16"></path>
+                </svg>
+              </span>
+              <span>Export new backup</span>
+            </button>
+            <button class="color-menu-item" id="import-backup-btn">
+              <span class="settings-menu-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 21V9"></path>
+                  <path d="M7 14l5-5 5 5"></path>
+                  <path d="M4 5h16"></path>
+                </svg>
+              </span>
+              <span>Import backup</span>
+            </button>
+            <input type="file" id="import-file-input" accept="application/json" style="display:none" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="breadcrumb" id="breadcrumb">
+      <button class="back-btn" id="back-btn">&larr; back</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div id="view-subjects">
+    <div id="subject-grid-container"></div>
+
+    <div class="daily-section">
+      <div class="daily-header">
+        <div class="daily-title">Revision Overview</div>
+      </div>
+      <p class="daily-sub">Open either dashboard for details.</p>
+
+      <div class="grid overview-grid">
+        <button class="tile overview-tile" id="open-revision-due-tile">
+          <div class="tile-content">
+            <div class="tile-top">
+              <span class="tile-name">Chapters Due for Revision</span>
+              <span class="overview-count-badge" id="revision-due-count-badge">0</span>
+            </div>
+            <div class="tile-meta">
+              <span class="tile-hint">click to open</span>
+              <span class="tile-progress-label" id="revision-due-summary">nothing due</span>
+            </div>
+          </div>
+        </button>
+
+        <button class="tile overview-tile" id="open-revision-backlog-tile">
+          <div class="tile-content">
+            <div class="tile-top">
+              <span class="tile-name">Revision Backlog</span>
+              <span class="overview-count-badge overdue-badge" id="revision-backlog-count-badge">0</span>
+            </div>
+            <div class="tile-meta">
+              <span class="tile-hint">click to open</span>
+              <span class="tile-progress-label" id="revision-backlog-summary">no backlog</span>
+            </div>
+          </div>
+        </button>
+      </div>
+    </div>
+
+    <div class="daily-section">
+      <div class="daily-header">
+        <div class="daily-title">Daily Work Target</div>
+      </div>
+      <p class="daily-sub">Click any date to open and log that day's target — subject, MCQ, lecture, revision. Fully manual.</p>
+
+      <div class="cal-toolbar">
+        <div class="cal-nav">
+          <button class="cal-nav-btn" id="cal-prev" aria-label="Previous month">&larr;</button>
+          <div class="cal-month-label" id="cal-month-label"></div>
+          <button class="cal-nav-btn" id="cal-next" aria-label="Next month">&rarr;</button>
+        </div>
+        <button class="cal-today-btn" id="cal-today-btn">Today</button>
+      </div>
+
+      <div class="cal-grid">
+        <div class="cal-dow-row" id="cal-dow-row"></div>
+        <div class="cal-weeks" id="cal-weeks"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="view-chapters" class="hidden"></div>
+  <div id="view-revision" class="hidden"></div>
+  <div id="view-revision-due" class="hidden"></div>
+  <div id="view-revision-backlog" class="hidden"></div>
+  <div id="view-day" class="hidden"></div>
+</main>
+
+<div class="toast" id="toast">
+  <span id="toast-text"></span>
+</div>
+
+<script>
+  // ---------- Static subject config ----------
+  const SUBJECTS = [
+    { id: "anatomy", name: "Anatomy", grp: "Pre-Clinical", w: 6 },
+    { id: "physiology", name: "Physiology", grp: "Pre-Clinical", w: 6 },
+    { id: "biochemistry", name: "Biochemistry", grp: "Pre-Clinical", w: 5 },
+    { id: "pathology", name: "Pathology", grp: "Para-Clinical", w: 9 },
+    { id: "pharmacology", name: "Pharmacology", grp: "Para-Clinical", w: 8 },
+    { id: "microbiology", name: "Microbiology", grp: "Para-Clinical", w: 7 },
+    { id: "forensic", name: "Forensic Medicine", grp: "Para-Clinical", w: 3 },
+    { id: "psm", name: "PSM / Community Medicine", grp: "Para-Clinical", w: 8 },
+    { id: "medicine", name: "Medicine", grp: "Clinical", w: 11 },
+    { id: "surgery", name: "Surgery", grp: "Clinical", w: 10 },
+    { id: "pediatrics", name: "Pediatrics", grp: "Clinical", w: 6 },
+    { id: "obg", name: "Obstetrics & Gynaecology", grp: "Clinical", w: 8 },
+    { id: "orthopedics", name: "Orthopedics", grp: "Clinical", w: 4 },
+    { id: "radiology", name: "Radiodiagnosis", grp: "Clinical", w: 3 },
+    { id: "anesthesia", name: "Anesthesia", grp: "Clinical", w: 3 },
+    { id: "dermatology", name: "Dermatology", grp: "Clinical", w: 3 },
+    { id: "psychiatry", name: "Psychiatry", grp: "Clinical", w: 3 },
+    { id: "ent", name: "ENT", grp: "Clinical", w: 3 },
+    { id: "ophthalmology", name: "Ophthalmology", grp: "Clinical", w: 3 },
+  ];
+
+  const GROUPS = ["Pre-Clinical", "Para-Clinical", "Clinical"];
+
+  const GROUP_META = {
+    "Pre-Clinical": { tag: "Yr 1", tint: "#2d6a4f" },
+    "Para-Clinical": { tag: "Yr 2", tint: "#9c6b1f" },
+    "Clinical": { tag: "Yr 3–4", tint: "#8b2e3f" },
+  };
+
+  // Snapshot of each group's original display name and year tag, captured
+  // before any saved overrides are applied — used to restore defaults if
+  // an edit is cleared back to blank. Keyed by the internal GROUPS id
+  // (e.g. "Pre-Clinical"), which never changes even if its displayed
+  // label is renamed — every lookup elsewhere (SUBJECTS.filter, etc.)
+  // keeps using this stable internal key.
+  const GROUP_DEFAULT_LABELS = {};
+  const GROUP_DEFAULT_TAGS = {};
+  GROUPS.forEach(g => {
+    GROUP_DEFAULT_LABELS[g] = g;
+    GROUP_DEFAULT_TAGS[g] = GROUP_META[g].tag;
+  });
+
+  // ---------- User-added custom subjects ----------
+  // Stored separately from the built-in SUBJECTS list so the 19 defaults
+  // stay stable; custom ones are merged in at startup before anything
+  // else reads SUBJECTS (weightage totals, grouping, rendering).
+  const CUSTOM_SUBJECTS_KEY = "rounds_custom_subjects_v1";
+
+  function loadCustomSubjects() {
+    try {
+      const raw = localStorage.getItem(CUSTOM_SUBJECTS_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) {
+      console.error("Failed to load custom subjects", e);
+      return [];
+    }
+  }
+
+  function saveCustomSubjects(list) {
+    try {
+      localStorage.setItem(CUSTOM_SUBJECTS_KEY, JSON.stringify(list));
+    } catch (e) {
+      console.error("Failed to save custom subjects", e);
+    }
+  }
+
+  function mergeCustomSubjects() {
+    const custom = loadCustomSubjects();
+    custom.forEach(c => {
+      if (!SUBJECTS.some(s => s.id === c.id)) SUBJECTS.push(c);
+      // Backfill the custom flag on any older saved entry that predates
+      // it, and on the matching in-memory SUBJECTS record too, so the
+      // Remove option shows correctly for subjects added before this
+      // flag existed.
+      const inMemory = SUBJECTS.find(s => s.id === c.id);
+      if (inMemory) inMemory.custom = true;
+      c.custom = true;
+    });
+    saveCustomSubjects(custom);
+  }
+
+  // Reliable check for whether a subject can be removed: membership in
+  // the persisted custom-subjects list, not just the in-memory `custom`
+  // flag — this way it works correctly even for subjects that were added
+  // before that flag was consistently set on every saved record.
+  function isRemovableSubject(subjectId) {
+    return loadCustomSubjects().some(s => s.id === subjectId);
+  }
+
+  function slugify(text) {
+    return "custom_" + text.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") + "_" + Math.random().toString(36).slice(2, 6);
+  }
+
+  function addCustomSubject(name, grp) {
+    const trimmed = (name || "").trim();
+    if (!trimmed) return null;
+    const newSubject = { id: slugify(trimmed), name: trimmed, grp, w: 3, custom: true };
+    SUBJECTS.push(newSubject);
+    const custom = loadCustomSubjects();
+    custom.push(newSubject);
+    saveCustomSubjects(custom);
+    return newSubject;
+  }
+
+  // Removes a custom subject entirely: drops it from the in-memory
+  // SUBJECTS list, from the persisted custom-subjects list, from any
+  // saved rename override, and deletes its chapter data. Only ever
+  // called for subjects with custom:true — the 19 built-in subjects
+  // can be renamed but never removed, since exam weightage and grouping
+  // are meant to stay structurally stable.
+  function removeCustomSubject(subjectId) {
+    if (!isRemovableSubject(subjectId)) return;
+    const idx = SUBJECTS.findIndex(s => s.id === subjectId);
+    if (idx !== -1) SUBJECTS.splice(idx, 1);
+
+    const custom = loadCustomSubjects().filter(s => s.id !== subjectId);
+    saveCustomSubjects(custom);
+
+    const nameOverrides = loadSubjectNameOverrides();
+    if (nameOverrides[subjectId]) {
+      delete nameOverrides[subjectId];
+      saveSubjectNameOverrides(nameOverrides);
+    }
+
+    if (DATA[subjectId]) {
+      delete DATA[subjectId];
+      saveData(DATA);
+    }
+  }
+
+  mergeCustomSubjects();
+
+  const maxW = Math.max(...SUBJECTS.map(s => s.w));
+
+  // Snapshot of each subject's original name, captured before any saved
+  // custom names are applied — used to restore the default if a rename is
+  // cleared back to blank.
+  const SUBJECT_DEFAULT_NAMES = {};
+  SUBJECTS.forEach(s => { SUBJECT_DEFAULT_NAMES[s.id] = s.name; });
+
+  function subjectById(id) {
+    return SUBJECTS.find(s => s.id === id);
+  }
+
+  // ---------- Custom subject names ----------
+  const SUBJECT_NAMES_KEY = "rounds_subject_names_v1";
+
+  function loadSubjectNameOverrides() {
+    try {
+      const raw = localStorage.getItem(SUBJECT_NAMES_KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch (e) {
+      console.error("Failed to load subject name overrides", e);
+      return {};
+    }
+  }
+
+  function saveSubjectNameOverrides(overrides) {
+    try {
+      localStorage.setItem(SUBJECT_NAMES_KEY, JSON.stringify(overrides));
+    } catch (e) {
+      console.error("Failed to save subject name overrides", e);
+    }
+  }
+
+  // Applies any saved custom names onto the SUBJECTS array in place, so
+  // every place that reads subject.name downstream sees the renamed value
+  // without needing its own override lookup.
+  function applySubjectNameOverrides() {
+    const overrides = loadSubjectNameOverrides();
+    SUBJECTS.forEach(s => {
+      if (overrides[s.id]) s.name = overrides[s.id];
+    });
+  }
+
+  function renameSubject(subjectId, newName) {
+    const subject = subjectById(subjectId);
+    if (!subject) return "ok";
+    const trimmed = (newName || "").trim();
+
+    if (trimmed) {
+      const normalized = trimmed.toLowerCase();
+      const duplicate = SUBJECTS.find(s =>
+        s.id !== subjectId && s.grp === subject.grp && s.name.trim().toLowerCase() === normalized
+      );
+      if (duplicate) return "duplicate";
+    }
+
+    const overrides = loadSubjectNameOverrides();
+    if (trimmed) {
+      subject.name = trimmed;
+      overrides[subjectId] = trimmed;
+    } else {
+      // blank clears the override — revert to the original default name
+      const original = SUBJECT_DEFAULT_NAMES[subjectId];
+      subject.name = original;
+      delete overrides[subjectId];
+    }
+    saveSubjectNameOverrides(overrides);
+    return "ok";
+  }
+
+  // ---------- Custom group labels & year tags (Pre-Clinical / Para-Clinical / Clinical) ----------
+  const GROUP_LABELS_KEY = "rounds_group_labels_v1";
+
+  function loadGroupLabelOverrides() {
+    try {
+      const raw = localStorage.getItem(GROUP_LABELS_KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch (e) {
+      console.error("Failed to load group label overrides", e);
+      return {};
+    }
+  }
+
+  function saveGroupLabelOverrides(overrides) {
+    try {
+      localStorage.setItem(GROUP_LABELS_KEY, JSON.stringify(overrides));
+    } catch (e) {
+      console.error("Failed to save group label overrides", e);
+    }
+  }
+
+  // Returns the current display label/tag for a group's internal key,
+  // falling back to the default if no override is saved.
+  function getGroupLabel(groupKey) {
+    const overrides = loadGroupLabelOverrides();
+    return (overrides[groupKey] && overrides[groupKey].label) || GROUP_DEFAULT_LABELS[groupKey];
+  }
+
+  function getGroupTag(groupKey) {
+    const overrides = loadGroupLabelOverrides();
+    return (overrides[groupKey] && overrides[groupKey].tag) || GROUP_DEFAULT_TAGS[groupKey];
+  }
+
+  function renameGroupLabel(groupKey, newLabel) {
+    const overrides = loadGroupLabelOverrides();
+    if (!overrides[groupKey]) overrides[groupKey] = {};
+    const trimmed = (newLabel || "").trim();
+    if (trimmed) {
+      overrides[groupKey].label = trimmed;
+    } else {
+      delete overrides[groupKey].label;
+      if (!overrides[groupKey].tag) delete overrides[groupKey];
+    }
+    saveGroupLabelOverrides(overrides);
+  }
+
+  function renameGroupTag(groupKey, newTag) {
+    const overrides = loadGroupLabelOverrides();
+    if (!overrides[groupKey]) overrides[groupKey] = {};
+    const trimmed = (newTag || "").trim();
+    if (trimmed) {
+      overrides[groupKey].tag = trimmed;
+    } else {
+      delete overrides[groupKey].tag;
+      if (!overrides[groupKey].label) delete overrides[groupKey];
+    }
+    saveGroupLabelOverrides(overrides);
+  }
+
+  // ---------- Chapter data persistence ----------
+  const STORAGE_KEY = "rounds_chapter_data_v1";
+
+  function loadData() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch (e) {
+      console.error("Failed to load data", e);
+      return {};
+    }
+  }
+
+  function saveData(data) {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      return true;
+    } catch (e) {
+      console.error("Failed to save data", e);
+      return false;
+    }
+  }
+
+  let DATA = loadData(); // { subjectId: [ {id, name, mcq, pyq, lectureDate, revision} ] }
+
+  function getChapters(subjectId) {
+    if (!DATA[subjectId]) DATA[subjectId] = [];
+    return DATA[subjectId];
+  }
+
+  function persist() {
+    const ok = saveData(DATA);
+    if (!ok) showToast("Save failed — storage may be full");
+  }
+
+  // ---------- Daily target persistence (keyed by date) ----------
+  const DAILY_STORAGE_KEY = "rounds_daily_targets_v2";
+
+  function loadDaily() {
+    try {
+      const raw = localStorage.getItem(DAILY_STORAGE_KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch (e) {
+      console.error("Failed to load daily targets", e);
+      return {};
+    }
+  }
+
+  function saveDaily() {
+    try {
+      localStorage.setItem(DAILY_STORAGE_KEY, JSON.stringify(DAILY));
+      return true;
+    } catch (e) {
+      console.error("Failed to save daily targets", e);
+      return false;
+    }
+  }
+
+  function persistDaily() {
+    const ok = saveDaily();
+    if (!ok) showToast("Save failed — storage may be full");
+  }
+
+  let DAILY = loadDaily(); // { "YYYY-MM-DD": [ {id, subjectId, mcq, lecture, revision, done} ] }
+
+  function getDayEntries(dateStr) {
+    if (!DAILY[dateStr]) DAILY[dateStr] = [];
+    return DAILY[dateStr];
+  }
+
+  // ---------- Utils ----------
+  function uid() {
+    return "c_" + Math.random().toString(36).slice(2, 10);
+  }
+
+  function showToast(msg) {
+    const toast = document.getElementById("toast");
+    const text = document.getElementById("toast-text");
+    text.textContent = msg;
+    toast.classList.add("visible");
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(() => toast.classList.remove("visible"), 1400);
+  }
+
+  function escapeHtml(str) {
+    if (!str) return "";
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function pad2(n) { return String(n).padStart(2, "0"); }
+
+  function isoDate(y, m, d) {
+    return `${y}-${pad2(m + 1)}-${pad2(d)}`;
+  }
+
+  function todayISO() {
+    const d = new Date();
+    return isoDate(d.getFullYear(), d.getMonth(), d.getDate());
+  }
+
+  const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  const DOW_NAMES = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+
+  // ---------- View switching ----------
+  let backAction = null; // function to call on back button; null = goHome
+
+  function showView(view) {
+    document.getElementById("view-subjects").classList.toggle("hidden", view !== "subjects");
+    document.getElementById("view-chapters").classList.toggle("hidden", view !== "chapters");
+    document.getElementById("view-revision").classList.toggle("hidden", view !== "revision");
+    document.getElementById("view-revision-due").classList.toggle("hidden", view !== "revision-due");
+    document.getElementById("view-revision-backlog").classList.toggle("hidden", view !== "revision-backlog");
+    document.getElementById("view-day").classList.toggle("hidden", view !== "day");
+    document.getElementById("breadcrumb").classList.toggle("visible", view !== "subjects");
+  }
+
+  function goHome() {
+    backAction = null;
+    showView("subjects");
+    document.getElementById("header-subtitle").textContent = "";
+    renderSubjectList();
+    renderCalendar();
+    updateRevisionOverviewBadges();
+  }
+
+  // ---------- Subject list view ----------
+  function renderSubjectList() {
+    const container = document.getElementById("subject-grid-container");
+    container.innerHTML = "";
+
+    GROUPS.forEach(grp => {
+      const items = SUBJECTS.filter(s => s.grp === grp);
+      const meta = GROUP_META[grp];
+
+      const section = document.createElement("section");
+      section.className = "group";
+
+      const groupHeader = document.createElement("div");
+      groupHeader.className = "group-header";
+      const groupLabel = getGroupLabel(grp);
+      const groupTag = getGroupTag(grp);
+      groupHeader.innerHTML = `
+        <span class="dot-marker" style="background:${meta.tint}"></span>
+        <h2><span class="editable-text group-label-text" contenteditable="false" spellcheck="false" data-group-key="${grp}">${groupLabel}</span></h2>
+        <button class="inline-edit-btn group-edit-btn" data-edit-target="label" title="Rename group" aria-label="Rename group">&#9998;</button>
+        <span class="group-tag editable-text" contenteditable="false" spellcheck="false" data-group-key="${grp}">${groupTag}</span>
+        <button class="inline-edit-btn group-edit-btn" data-edit-target="tag" title="Edit year" aria-label="Edit year">&#9998;</button>
+        <span class="rule"></span>
+      `;
+
+      const labelEl = groupHeader.querySelector(".group-label-text");
+      const tagEl = groupHeader.querySelector(".group-tag");
+      const [labelEditBtn, tagEditBtn] = groupHeader.querySelectorAll(".group-edit-btn");
+
+      function commitLabel() {
+        labelEl.contentEditable = "false";
+        renameGroupLabel(grp, labelEl.textContent);
+        renderSubjectList();
+      }
+
+      function commitTag() {
+        tagEl.contentEditable = "false";
+        renameGroupTag(grp, tagEl.textContent);
+        renderSubjectList();
+      }
+
+      labelEditBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        labelEl.contentEditable = "true";
+        labelEl.focus();
+        document.execCommand("selectAll", false, null);
+      });
+
+      tagEditBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        tagEl.contentEditable = "true";
+        tagEl.focus();
+        document.execCommand("selectAll", false, null);
+      });
+
+      labelEl.addEventListener("blur", commitLabel);
+      labelEl.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") { e.preventDefault(); labelEl.blur(); }
+        else if (e.key === "Escape") { labelEl.textContent = groupLabel; labelEl.blur(); }
+      });
+
+      tagEl.addEventListener("blur", commitTag);
+      tagEl.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") { e.preventDefault(); tagEl.blur(); }
+        else if (e.key === "Escape") { tagEl.textContent = groupTag; tagEl.blur(); }
+      });
+
+      section.appendChild(groupHeader);
+
+      const grid = document.createElement("div");
+      grid.className = "grid";
+
+      items.forEach(s => {
+        const chapters = getChapters(s.id);
+        const total = chapters.length;
+        const done = chapters.filter(c => c.revision === "done").length;
+        const pct = total ? Math.round((done / total) * 100) : 0;
+
+        const radius = 21;
+        const circumference = 2 * Math.PI * radius;
+        const dashOffset = circumference * (1 - pct / 100);
+
+        const tile = document.createElement("div");
+        tile.className = "tile";
+        tile.innerHTML = `
+          <div class="ring-wrap">
+            <svg class="ring-svg" viewBox="0 0 52 52">
+              <circle class="ring-track" cx="26" cy="26" r="${radius}"></circle>
+              <circle class="ring-fill" cx="26" cy="26" r="${radius}"
+                stroke="${meta.tint}"
+                stroke-dasharray="${circumference}"
+                stroke-dashoffset="${dashOffset}"></circle>
+            </svg>
+            <span class="ring-label">${pct}%</span>
+          </div>
+          <div class="tile-content">
+            <div class="tile-top">
+              <div class="tile-name-group">
+                <span class="tile-name editable-text" contenteditable="false" spellcheck="false" data-subject-id="${s.id}">${s.name}</span>
+              </div>
+              <span class="tile-pct" style="color:${meta.tint}">${s.w}%</span>
+            </div>
+            <div class="tile-meta">
+              <span class="tile-hint">click to open</span>
+              <span class="tile-progress-label">${total ? `${done}/${total} revised` : "no chapters yet"}</span>
+            </div>
+          </div>
+          <div class="tile-context-menu" id="tile-context-${s.id}">
+            <button class="tile-context-item tile-context-rename">
+              <span>&#9998;</span> Rename
+            </button>
+            ${isRemovableSubject(s.id) ? `
+              <button class="tile-context-item tile-context-remove">
+                <span>&times;</span> Remove
+              </button>
+            ` : ""}
+          </div>
+          <div class="tile-confirm-remove">
+            <p class="tile-confirm-text">Remove "${escapeHtml(s.name)}"? Chapters and progress will be deleted.</p>
+            <div class="tile-confirm-actions">
+              <button class="tile-confirm-cancel">Cancel</button>
+              <button class="tile-confirm-delete">Remove</button>
+            </div>
+          </div>
+        `;
+
+        const nameEl = tile.querySelector(".tile-name");
+        const contextMenu = tile.querySelector(".tile-context-menu");
+        const confirmPanel = tile.querySelector(".tile-confirm-remove");
+
+        function openContextMenu() {
+          document.querySelectorAll(".tile-context-menu.visible").forEach(m => {
+            if (m !== contextMenu) {
+              m.classList.remove("visible");
+              const otherTile = m.closest(".tile");
+              if (otherTile) otherTile.classList.remove("menu-open");
+            }
+          });
+          contextMenu.classList.add("visible");
+          tile.classList.add("menu-open");
+        }
+
+        function closeContextMenu() {
+          contextMenu.classList.remove("visible");
+          tile.classList.remove("menu-open");
+        }
+
+        function openConfirmRemove() {
+          closeContextMenu();
+          confirmPanel.classList.add("visible");
+          tile.classList.add("menu-open");
+        }
+
+        function closeConfirmRemove() {
+          confirmPanel.classList.remove("visible");
+          tile.classList.remove("menu-open");
+        }
+
+        // Long-press detection — works for touch and mouse alike. Native
+        // text selection / callout menus are suppressed via CSS
+        // (user-select: none) so a long-press reliably opens our menu
+        // instead of the browser's own text-selection gesture.
+        let pressTimer = null;
+        let longPressFired = false;
+        let pressStartPoint = null;
+        const MOVE_CANCEL_THRESHOLD = 10; // px — treat as a scroll/drag, not a hold
+
+        function startPress(e) {
+          if (e.target.closest(".tile-context-menu") || e.target.closest(".tile-confirm-remove")) return;
+          longPressFired = false;
+          pressStartPoint = { x: e.clientX, y: e.clientY };
+          pressTimer = setTimeout(() => {
+            longPressFired = true;
+            openContextMenu();
+          }, 550);
+        }
+
+        function movePress(e) {
+          if (!pressStartPoint) return;
+          const dx = Math.abs(e.clientX - pressStartPoint.x);
+          const dy = Math.abs(e.clientY - pressStartPoint.y);
+          if (dx > MOVE_CANCEL_THRESHOLD || dy > MOVE_CANCEL_THRESHOLD) {
+            clearTimeout(pressTimer);
+          }
+        }
+
+        function cancelPress() {
+          clearTimeout(pressTimer);
+          pressStartPoint = null;
+        }
+
+        tile.addEventListener("pointerdown", startPress);
+        tile.addEventListener("pointermove", movePress);
+        tile.addEventListener("pointerup", cancelPress);
+        tile.addEventListener("pointerleave", cancelPress);
+        tile.addEventListener("pointercancel", cancelPress);
+        tile.addEventListener("contextmenu", (e) => {
+          // Right-click (desktop) also opens the menu, and suppresses the
+          // browser's own right-click / long-press callout menu.
+          e.preventDefault();
+          openContextMenu();
+        });
+
+        contextMenu.querySelector(".tile-context-rename").addEventListener("click", (e) => {
+          e.stopPropagation();
+          closeContextMenu();
+          nameEl.contentEditable = "true";
+          nameEl.focus();
+          document.execCommand("selectAll", false, null);
+        });
+
+        const removeBtn = contextMenu.querySelector(".tile-context-remove");
+        if (removeBtn) {
+          removeBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            openConfirmRemove();
+          });
+        }
+
+        confirmPanel.querySelector(".tile-confirm-cancel").addEventListener("click", (e) => {
+          e.stopPropagation();
+          closeConfirmRemove();
+        });
+
+        confirmPanel.querySelector(".tile-confirm-delete").addEventListener("click", (e) => {
+          e.stopPropagation();
+          closeConfirmRemove();
+          removeCustomSubject(s.id);
+          renderSubjectList();
+          showToast(`${s.name} removed`);
+        });
+
+        nameEl.addEventListener("click", (e) => {
+          if (nameEl.contentEditable === "true") e.stopPropagation();
+        });
+
+        nameEl.addEventListener("blur", () => {
+          nameEl.contentEditable = "false";
+          const result = renameSubject(s.id, nameEl.textContent);
+          if (result === "duplicate") {
+            showToast(`A subject named "${nameEl.textContent.trim()}" already exists in ${getGroupLabel(grp)}`);
+            nameEl.textContent = s.name;
+            return;
+          }
+          renderSubjectList();
+        });
+
+        nameEl.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            nameEl.blur();
+          } else if (e.key === "Escape") {
+            nameEl.textContent = s.name;
+            nameEl.blur();
+          }
+        });
+
+        tile.addEventListener("click", (e) => {
+          if (e.target.closest(".tile-context-menu")) return;
+          if (e.target.closest(".tile-confirm-remove")) return;
+          if (nameEl.contentEditable === "true") return;
+          if (longPressFired) { longPressFired = false; return; }
+          openSubject(s);
+        });
+        grid.appendChild(tile);
+      });
+
+      // "+" tile — add a new subject to this year/group
+      const addTile = document.createElement("div");
+      addTile.className = "tile add-subject-tile";
+      addTile.innerHTML = `
+        <div class="add-subject-idle">
+          <span class="add-subject-plus">+</span>
+          <span class="add-subject-label">Add subject</span>
+        </div>
+        <div class="add-subject-form">
+          <div class="add-subject-form-row">
+            <input type="text" class="add-subject-input" placeholder="Subject name" autocomplete="off" />
+            <div class="add-subject-actions">
+              <button class="add-subject-confirm" title="Add subject" aria-label="Add subject">&#10003;</button>
+              <button class="add-subject-cancel" title="Cancel" aria-label="Cancel">&times;</button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      const idleView = addTile.querySelector(".add-subject-idle");
+      const formView = addTile.querySelector(".add-subject-form");
+      const input = addTile.querySelector(".add-subject-input");
+
+      function enterAddMode(e) {
+        if (e) e.stopPropagation();
+        addTile.classList.add("adding");
+        input.value = "";
+        clearDuplicateWarning();
+        input.focus();
+      }
+
+      function exitAddMode() {
+        addTile.classList.remove("adding");
+        clearDuplicateWarning();
+      }
+
+      function clearDuplicateWarning() {
+        addTile.classList.remove("has-duplicate-warning");
+        const warningEl = addTile.querySelector(".add-subject-warning");
+        if (warningEl) warningEl.remove();
+      }
+
+      function showDuplicateWarning(existingName) {
+        clearDuplicateWarning();
+        addTile.classList.add("has-duplicate-warning");
+        const warningEl = document.createElement("div");
+        warningEl.className = "add-subject-warning";
+        warningEl.textContent = `"${existingName}" already exists in ${getGroupLabel(grp)} — please choose a different name.`;
+        formView.appendChild(warningEl);
+        input.focus();
+      }
+
+      function isDuplicateInGroup(name) {
+        const normalized = name.trim().toLowerCase();
+        return SUBJECTS.find(s => s.grp === grp && s.name.trim().toLowerCase() === normalized);
+      }
+
+      function confirmAdd() {
+        const name = input.value.trim();
+        if (!name) { exitAddMode(); return; }
+
+        const duplicate = isDuplicateInGroup(name);
+        if (duplicate) {
+          showDuplicateWarning(duplicate.name);
+          return;
+        }
+
+        addCustomSubject(name, grp);
+        renderSubjectList();
+        showToast(`${name} added to ${getGroupLabel(grp)}`);
+      }
+
+      addTile.addEventListener("click", (e) => {
+        if (!addTile.classList.contains("adding")) enterAddMode(e);
+      });
+
+      addTile.querySelector(".add-subject-confirm").addEventListener("click", (e) => {
+        e.stopPropagation();
+        confirmAdd();
+      });
+
+      addTile.querySelector(".add-subject-cancel").addEventListener("click", (e) => {
+        e.stopPropagation();
+        exitAddMode();
+      });
+
+      input.addEventListener("click", (e) => e.stopPropagation());
+      input.addEventListener("input", () => clearDuplicateWarning());
+      input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") { e.preventDefault(); confirmAdd(); }
+        else if (e.key === "Escape") { e.preventDefault(); exitAddMode(); }
+      });
+
+      grid.appendChild(addTile);
+
+      section.appendChild(grid);
+      container.appendChild(section);
+    });
+  }
+
+  // ---------- Chapter detail view ----------
+  function openSubject(subject, highlightChapterId) {
+    backAction = null;
+    showView("chapters");
+    document.getElementById("header-subtitle").textContent = "Track chapters for this subject — everything below is editable.";
+    renderChapterView(subject);
+
+    if (highlightChapterId) {
+      // Give the freshly-rendered table a frame to paint before scrolling.
+      requestAnimationFrame(() => {
+        const row = document.querySelector(`#chapter-tbody tr[data-chapter-id="${highlightChapterId}"]`);
+        if (row) {
+          row.scrollIntoView({ behavior: "smooth", block: "center" });
+          row.classList.add("revised-pulse");
+          row.addEventListener("animationend", () => row.classList.remove("revised-pulse"), { once: true });
+        }
+      });
+    }
+  }
+
+  // ---------- Deep links: #chapter=<chapterId> jumps straight to that
+  // chapter from an external link (e.g. one pasted into a notes app). ----------
+  function findChapterAnywhere(chapterId) {
+    for (const subject of SUBJECTS) {
+      const chapters = getChapters(subject.id);
+      const chapter = chapters.find(c => c.id === chapterId);
+      if (chapter) return { subject, chapter };
+    }
+    return null;
+  }
+
+  function buildChapterDeepLink(chapterId) {
+    const base = `${location.origin}${location.pathname}`;
+    return `${base}#chapter=${encodeURIComponent(chapterId)}`;
+  }
+
+  function handleDeepLink() {
+    const hash = location.hash || "";
+    const match = hash.match(/#chapter=([^&]+)/);
+    if (!match) return false;
+
+    const chapterId = decodeURIComponent(match[1]);
+    const found = findChapterAnywhere(chapterId);
+
+    if (!found) {
+      showToast("That chapter link doesn't match anything in this dashboard");
+      history.replaceState(null, "", location.pathname + location.search);
+      return false;
+    }
+
+    openSubject(found.subject, found.chapter.id);
+    return true;
+  }
+
+  function renderChapterView(subject) {
+    const container = document.getElementById("view-chapters");
+    const chapters = getChapters(subject.id);
+    const meta = GROUP_META[subject.grp];
+
+    const totalMcq = chapters.reduce((a, c) => a + (Number(c.mcq) || 0), 0);
+    const totalPyq = chapters.reduce((a, c) => a + (Number(c.pyq) || 0), 0);
+    const doneCount = chapters.filter(c => c.revision === "done").length;
+
+    container.innerHTML = `
+      <div class="subject-title-row">
+        <div class="subject-title" style="color:${meta.tint}">${subject.name}</div>
+      </div>
+      <div class="subject-stats">
+        <span><strong>${chapters.length}</strong> chapters</span>
+        <span><strong>${totalMcq}</strong> MCQs logged</span>
+        <span><strong>${totalPyq}</strong> PYQs logged</span>
+        <span><strong>${doneCount}</strong>/${chapters.length || 0} revised</span>
+      </div>
+      <div class="toolbar">
+        <button class="add-btn" id="add-chapter-btn">+ Add chapter</button>
+        <button class="add-btn" id="open-revision-btn" style="background:${meta.tint}">Spaced Revision Dashboard</button>
+        <span class="save-note">changes save automatically</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:24%">Chapter</th>
+              <th>MCQ</th>
+              <th>PYQ</th>
+              <th>Lecture completed</th>
+              <th>Revision</th>
+              <th>Link</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="chapter-tbody"></tbody>
+        </table>
+      </div>
+    `;
+
+    document.getElementById("add-chapter-btn").addEventListener("click", () => {
+      chapters.push({ id: uid(), name: "", mcq: "", pyq: "", lectureDate: "", revision: "none", link: "" });
+      persist();
+      renderChapterView(subject);
+      requestAnimationFrame(() => {
+        const rows = document.querySelectorAll("#chapter-tbody tr");
+        const last = rows[rows.length - 1];
+        if (last) last.querySelector("input[type=text]").focus();
+      });
+    });
+
+    document.getElementById("open-revision-btn").addEventListener("click", () => {
+      openRevisionDashboard(subject);
+    });
+
+    renderChapterRows(subject, chapters);
+  }
+
+  function renderChapterRows(subject, chapters) {
+    const tbody = document.getElementById("chapter-tbody");
+
+    if (chapters.length === 0) {
+      tbody.innerHTML = `
+        <tr><td colspan="7">
+          <div class="empty-state-rich">
+            <div class="empty-state-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M2 5.5C2 4.67 2.67 4 3.5 4H10a2 2 0 0 1 2 2v14a1.5 1.5 0 0 0-1.5-1.5H2.5A.5.5 0 0 1 2 18V5.5Z"></path>
+                <path d="M22 5.5c0-.83-.67-1.5-1.5-1.5H14a2 2 0 0 0-2 2v14a1.5 1.5 0 0 1 1.5-1.5h7.5a.5.5 0 0 0 .5-.5V5.5Z"></path>
+              </svg>
+            </div>
+            <div class="empty-state-title">No chapters yet</div>
+            <div class="empty-state-desc">Start building your ${subject.name} chapter list — add each chapter to track MCQs, PYQs, lecture dates, and revision status.</div>
+            <button class="empty-state-cta" id="empty-add-chapter-btn">+ Add first chapter</button>
+          </div>
+        </td></tr>
+      `;
+      const cta = document.getElementById("empty-add-chapter-btn");
+      if (cta) cta.addEventListener("click", () => document.getElementById("add-chapter-btn").click());
+      return;
+    }
+
+    tbody.innerHTML = "";
+    chapters.forEach(ch => {
+      const tr = document.createElement("tr");
+      tr.setAttribute("data-chapter-id", ch.id);
+      const hasLink = !!(ch.link && ch.link.trim());
+      tr.innerHTML = `
+        <td class="chapter-name-cell">
+          <input type="text" placeholder="Chapter name" value="${escapeHtml(ch.name)}" data-field="name" />
+        </td>
+        <td><input type="number" min="0" placeholder="0" value="${ch.mcq}" data-field="mcq" /></td>
+        <td><input type="number" min="0" placeholder="0" value="${ch.pyq}" data-field="pyq" /></td>
+        <td><input type="date" value="${ch.lectureDate || ""}" data-field="lectureDate" /></td>
+        <td>
+          <div class="revision-cell-wrap">
+            <select class="revision-select" data-field="revision">
+              <option value="none" ${ch.revision === "none" ? "selected" : ""}>Not started</option>
+              <option value="progress" ${ch.revision === "progress" ? "selected" : ""}>In progress</option>
+              <option value="done" ${ch.revision === "done" ? "selected" : ""}>Revised</option>
+            </select>
+          </div>
+        </td>
+        <td>
+          <div class="chapter-link-wrap">
+            <button class="chapter-link-btn${hasLink ? " has-link" : ""}" title="${hasLink ? "Chapter link" : "Add a link"}" aria-label="${hasLink ? "Chapter link" : "Add a link"}">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 17H7a5 5 0 0 1 0-10h2"></path>
+                <path d="M15 7h2a5 5 0 0 1 0 10h-2"></path>
+                <path d="M8 12h8"></path>
+              </svg>
+            </button>
+            <div class="chapter-link-popover">
+              <label class="chapter-link-label">Link for this chapter</label>
+              <input type="url" class="chapter-link-input" placeholder="https://…" value="${escapeHtml(ch.link || "")}" autocomplete="off" />
+              <div class="chapter-link-actions">
+                <button class="chapter-link-open" ${hasLink ? "" : "disabled"}>Open</button>
+                <button class="chapter-link-copy" ${hasLink ? "" : "disabled"}>Copy</button>
+                <button class="chapter-link-save">Save</button>
+              </div>
+              <div class="chapter-link-divider"></div>
+              <label class="chapter-link-label">Jump back to this chapter</label>
+              <p class="chapter-link-hint">Paste this into another app (like a notes app) — tapping it opens this exact chapter here.</p>
+              <button class="chapter-link-copy-deep">Copy dashboard link</button>
+            </div>
+          </div>
+        </td>
+        <td><button class="del-btn" title="Delete chapter" aria-label="Delete chapter">&times;</button></td>
+      `;
+
+      tr.querySelectorAll("input, select").forEach(el => {
+        if (el.classList.contains("chapter-link-input")) return; // handled separately below
+        const evt = el.tagName === "SELECT" ? "change" : "input";
+        el.addEventListener(evt, () => {
+          const field = el.getAttribute("data-field");
+          const prevValue = ch[field];
+          ch[field] = el.value;
+          persist();
+          updateSubjectStats(chapters);
+
+          if (field === "revision" && prevValue !== "done" && el.value === "done") {
+            celebrateRevised(tr, el.closest(".revision-cell-wrap"));
+          }
+        });
+      });
+
+      initChapterLinkControl(tr, ch, chapters, subject);
+
+      tr.querySelector(".del-btn").addEventListener("click", () => {
+        const idx = chapters.findIndex(c => c.id === ch.id);
+        if (idx > -1) chapters.splice(idx, 1);
+        persist();
+        renderChapterView(subject);
+        showToast("Chapter removed");
+      });
+
+      tbody.appendChild(tr);
+    });
+  }
+
+  // Wires up one chapter row's link icon: click to open a small popover
+  // where the URL can be pasted/edited, plus Open / Copy / Save actions.
+  // Each link is stored on that chapter's own record only (ch.link) — it
+  // never touches any other chapter or subject.
+  function initChapterLinkControl(tr, ch, chapters, subject) {
+    const wrap = tr.querySelector(".chapter-link-wrap");
+    const btn = wrap.querySelector(".chapter-link-btn");
+    const popover = wrap.querySelector(".chapter-link-popover");
+    const input = wrap.querySelector(".chapter-link-input");
+    const openBtn = wrap.querySelector(".chapter-link-open");
+    const copyBtn = wrap.querySelector(".chapter-link-copy");
+    const saveBtn = wrap.querySelector(".chapter-link-save");
+    const copyDeepBtn = wrap.querySelector(".chapter-link-copy-deep");
+
+    function normalizeUrl(raw) {
+      const trimmed = (raw || "").trim();
+      if (!trimmed) return "";
+      if (/^https?:\/\//i.test(trimmed)) return trimmed;
+      return `https://${trimmed}`;
+    }
+
+    function refreshButtonState() {
+      const hasLink = !!(ch.link && ch.link.trim());
+      btn.classList.toggle("has-link", hasLink);
+      btn.title = hasLink ? "Chapter link" : "Add a link";
+      openBtn.disabled = !hasLink;
+      copyBtn.disabled = !hasLink;
+    }
+
+    function openPopover(e) {
+      if (e) e.stopPropagation();
+      document.querySelectorAll(".chapter-link-popover.visible").forEach(p => {
+        if (p !== popover) p.classList.remove("visible");
+      });
+      popover.classList.add("visible");
+      input.focus();
+    }
+
+    function closePopover() {
+      popover.classList.remove("visible");
+    }
+
+    function saveLink() {
+      const normalized = normalizeUrl(input.value);
+      ch.link = normalized;
+      input.value = normalized;
+      persist();
+      refreshButtonState();
+      showToast(normalized ? "Link saved" : "Link cleared");
+      closePopover();
+    }
+
+    btn.addEventListener("click", openPopover);
+
+    input.addEventListener("click", (e) => e.stopPropagation());
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") { e.preventDefault(); saveLink(); }
+      else if (e.key === "Escape") { e.preventDefault(); closePopover(); }
+    });
+
+    saveBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      saveLink();
+    });
+
+    openBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (ch.link) window.open(ch.link, "_blank", "noopener,noreferrer");
+    });
+
+    copyBtn.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      if (!ch.link) return;
+      try {
+        await navigator.clipboard.writeText(ch.link);
+        showToast("Link copied — paste it anywhere");
+      } catch (err) {
+        // Clipboard API unavailable/blocked — fall back to a selectable
+        // input so the user can copy manually.
+        input.focus();
+        input.select();
+        showToast("Select and copy the link below");
+      }
+    });
+
+    copyDeepBtn.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      const deepLink = buildChapterDeepLink(ch.id);
+      try {
+        await navigator.clipboard.writeText(deepLink);
+        showToast("Dashboard link copied — paste it in your notes app");
+      } catch (err) {
+        // Clipboard API unavailable/blocked — fall back to a temporary
+        // selectable field so the user can copy it manually.
+        const tempInput = document.createElement("input");
+        tempInput.value = deepLink;
+        tempInput.readOnly = true;
+        tempInput.style.position = "fixed";
+        tempInput.style.opacity = "0";
+        document.body.appendChild(tempInput);
+        tempInput.select();
+        try { document.execCommand("copy"); } catch (e2) { /* ignore */ }
+        document.body.removeChild(tempInput);
+        showToast("Dashboard link copied — paste it in your notes app");
+      }
+    });
+  }
+
+  function celebrateRevised(rowEl, cellWrapEl) {
+    // Row pulse
+    rowEl.classList.remove("revised-pulse");
+    void rowEl.offsetWidth; // force reflow so the animation can restart
+    rowEl.classList.add("revised-pulse");
+    rowEl.addEventListener("animationend", () => rowEl.classList.remove("revised-pulse"), { once: true });
+
+    // Pop-in checkmark badge next to the dropdown
+    if (cellWrapEl) {
+      const existing = cellWrapEl.querySelector(".revised-check");
+      if (existing) existing.remove();
+      const badge = document.createElement("span");
+      badge.className = "revised-check";
+      badge.textContent = "✓";
+      badge.setAttribute("aria-hidden", "true");
+      cellWrapEl.appendChild(badge);
+      badge.addEventListener("animationend", (e) => {
+        if (e.animationName === "check-fade-out") badge.remove();
+      });
+    }
+  }
+
+  function updateSubjectStats(chapters) {
+    const totalMcq = chapters.reduce((a, c) => a + (Number(c.mcq) || 0), 0);
+    const totalPyq = chapters.reduce((a, c) => a + (Number(c.pyq) || 0), 0);
+    const doneCount = chapters.filter(c => c.revision === "done").length;
+    const statsEl = document.querySelector("#view-chapters .subject-stats");
+    if (statsEl) {
+      statsEl.innerHTML = `
+        <span><strong>${chapters.length}</strong> chapters</span>
+        <span><strong>${totalMcq}</strong> MCQs logged</span>
+        <span><strong>${totalPyq}</strong> PYQs logged</span>
+        <span><strong>${doneCount}</strong>/${chapters.length || 0} revised</span>
+      `;
+    }
+  }
+
+  // ---------- Spaced revision dashboard (R1–R5) ----------
+  const REVISION_STAGES = [
+    { key: "r1", label: "R1", offset: 0 },
+    { key: "r2", label: "R2", offset: 3 },
+    { key: "r3", label: "R3", offset: 7 },
+    { key: "r4", label: "R4", offset: 15 },
+    { key: "r5", label: "R5", offset: 30 },
+  ];
+
+  function addDaysISO(dateStr, days) {
+    const [y, m, d] = dateStr.split("-").map(Number);
+    const dt = new Date(y, m - 1, d);
+    dt.setDate(dt.getDate() + days);
+    return isoDate(dt.getFullYear(), dt.getMonth(), dt.getDate());
+  }
+
+  // Ensures ch.spacedRevision exists and its dates are derived from lectureDate
+  // (Day 0) unless the user has manually overridden a specific stage's date.
+  function ensureSpacedRevision(ch) {
+    if (!ch.spacedRevision) ch.spacedRevision = {};
+    const sr = ch.spacedRevision;
+    REVISION_STAGES.forEach(stage => {
+      if (!sr[stage.key]) sr[stage.key] = { date: "", done: false, manual: false };
+    });
+    return sr;
+  }
+
+  // Recompute auto (non-manual) stage dates from the chapter's lectureDate (Day 0).
+  function recalcSpacedRevisionDates(ch) {
+    const sr = ensureSpacedRevision(ch);
+    const base = ch.lectureDate;
+    REVISION_STAGES.forEach(stage => {
+      const entry = sr[stage.key];
+      if (!base) {
+        if (!entry.manual) entry.date = "";
+        return;
+      }
+      if (!entry.manual) {
+        entry.date = addDaysISO(base, stage.offset);
+      }
+    });
+  }
+
+  function openRevisionDashboard(subject) {
+    backAction = () => openSubject(subject);
+    showView("revision");
+    document.getElementById("header-subtitle").textContent = "Spaced revision plan — R1=Day0, R2=+3, R3=+7, R4=+15, R5=+30. Dates auto-fill from lecture completion date; edit any date to override.";
+    renderRevisionDashboard(subject);
+  }
+
+  function renderRevisionDashboard(subject) {
+    const container = document.getElementById("view-revision");
+    const chapters = getChapters(subject.id);
+    const meta = GROUP_META[subject.grp];
+
+    chapters.forEach(ch => recalcSpacedRevisionDates(ch));
+
+    const headerCells = REVISION_STAGES.map(s => `<th>${s.label} <span style="opacity:.6;font-weight:400;text-transform:none">(Day ${s.offset})</span></th>`).join("");
+
+    container.innerHTML = `
+      <div class="subject-title-row">
+        <div class="subject-title" style="color:${meta.tint}">${subject.name} — Spaced Revision</div>
+      </div>
+      <div class="rev-legend">
+        <span><strong>R1</strong> Day 0 (lecture date)</span>
+        <span><strong>R2</strong> Day 3</span>
+        <span><strong>R3</strong> Day 7</span>
+        <span><strong>R4</strong> Day 15</span>
+        <span><strong>R5</strong> Day 30</span>
+      </div>
+      <div class="toolbar">
+        <span class="save-note">dates auto-calculate from each chapter's lecture completion date — edit any date to override manually</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:20%">Chapter</th>
+              ${headerCells}
+            </tr>
+          </thead>
+          <tbody id="revision-tbody"></tbody>
+        </table>
+      </div>
+    `;
+
+    renderRevisionRows(subject, chapters);
+  }
+
+  function renderRevisionRows(subject, chapters, justCompletedKey) {
+    const tbody = document.getElementById("revision-tbody");
+
+    if (chapters.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state">No chapters yet for ${subject.name}. Add chapters first from the chapter tracker, then set a lecture completion date to generate the revision plan.</div></td></tr>`;
+      return;
+    }
+
+    const todayStr = todayISO();
+    tbody.innerHTML = "";
+
+    chapters.forEach(ch => {
+      const sr = ensureSpacedRevision(ch);
+      const hasBase = !!ch.lectureDate;
+
+      const tr = document.createElement("tr");
+
+      const nameCell = `<td class="chapter-name-cell"><strong>${escapeHtml(ch.name) || "(untitled chapter)"}</strong></td>`;
+
+      const stageCells = REVISION_STAGES.map(stage => {
+        const entry = sr[stage.key];
+        const overdue = hasBase && entry.date && !entry.done && entry.date < todayStr;
+        const cellKey = `${ch.id}:${stage.key}`;
+        return `
+          <td>
+            <div class="rev-cell${!hasBase ? " no-base" : ""}${overdue ? " overdue" : ""}" data-cell-key="${cellKey}">
+              <input type="date" value="${entry.date || ""}" data-stage="${stage.key}" data-field="date" ${!hasBase ? "disabled" : ""} />
+              <label class="rev-check-row">
+                <input type="checkbox" data-stage="${stage.key}" data-field="done" ${entry.done ? "checked" : ""} ${!hasBase ? "disabled" : ""} />
+                done
+              </label>
+            </div>
+          </td>
+        `;
+      }).join("");
+
+      tr.innerHTML = nameCell + stageCells;
+
+      tr.querySelectorAll("input[data-stage]").forEach(el => {
+        el.addEventListener(el.type === "checkbox" ? "change" : "change", () => {
+          const stageKey = el.getAttribute("data-stage");
+          const field = el.getAttribute("data-field");
+          const entry = sr[stageKey];
+          let completedNow = false;
+          if (field === "date") {
+            entry.date = el.value;
+            entry.manual = true; // user override — stop auto-recalculating this stage
+          } else if (field === "done") {
+            completedNow = el.checked && !entry.done;
+            entry.done = el.checked;
+          }
+          persist();
+          renderRevisionRows(subject, chapters, completedNow ? `${ch.id}:${stageKey}` : null);
+        });
+      });
+
+      tbody.appendChild(tr);
+    });
+
+    if (justCompletedKey) {
+      const cellEl = tbody.querySelector(`.rev-cell[data-cell-key="${justCompletedKey}"]`);
+      if (cellEl) celebrateRevisedCell(cellEl);
+    }
+  }
+
+  function celebrateRevisedCell(cellEl) {
+    const rowEl = cellEl.closest("tr");
+    if (rowEl) {
+      rowEl.classList.remove("revised-pulse");
+      void rowEl.offsetWidth;
+      rowEl.classList.add("revised-pulse");
+      rowEl.addEventListener("animationend", () => rowEl.classList.remove("revised-pulse"), { once: true });
+    }
+
+    const existing = cellEl.querySelector(".revised-check");
+    if (existing) existing.remove();
+    const badge = document.createElement("span");
+    badge.className = "revised-check";
+    badge.textContent = "✓";
+    badge.setAttribute("aria-hidden", "true");
+    cellEl.querySelector(".rev-check-row").appendChild(badge);
+    badge.addEventListener("animationend", (e) => {
+      if (e.animationName === "check-fade-out") badge.remove();
+    });
+  }
+
+  // ---------- Chapters Due for Revision (own dashboard, cross-subject) ----------
+  // Shows every revision stage across every subject that hasn't been marked
+  // done yet — regardless of date (today, upcoming, or overdue), all in one
+  // place, sorted by due date so the nearest ones surface first.
+  // ---------- Chapters Due for Revision (own dashboard, cross-subject) ----------
+  // Shows only revision stages due exactly today (matching the calendar's
+  // today), not yet marked done, across every subject.
+  function getAllDueRevisions() {
+    const todayStr = todayISO();
+    const due = [];
+    SUBJECTS.forEach(s => {
+      const chapters = getChapters(s.id);
+      chapters.forEach(ch => {
+        if (!ch.lectureDate) return;
+        recalcSpacedRevisionDates(ch);
+        const sr = ensureSpacedRevision(ch);
+        REVISION_STAGES.forEach(stage => {
+          const entry = sr[stage.key];
+          if (entry.date === todayStr && !entry.done) {
+            due.push({ subject: s, chapter: ch, stage, entry });
+          }
+        });
+      });
+    });
+    return due;
+  }
+
+  function openRevisionDueDashboard() {
+    backAction = null;
+    showView("revision-due");
+    document.getElementById("header-subtitle").textContent = "Chapters due for revision today, pulled from every subject's Spaced Revision Dashboard.";
+    renderRevisionDuePage();
+  }
+
+  function renderRevisionDuePage() {
+    const container = document.getElementById("view-revision-due");
+    container.innerHTML = `
+      <div class="subject-title-row">
+        <div class="subject-title">Chapters Due for Revision</div>
+      </div>
+      <p class="daily-sub">Pulled automatically from every subject's Spaced Revision Dashboard (R1–R5). Shows only chapters due today, not yet marked done.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:22%">Subject</th>
+              <th style="width:30%">Chapter</th>
+              <th>Stage</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="revision-due-tbody"></tbody>
+        </table>
+      </div>
+    `;
+
+    renderRevisionDueDashboard();
+  }
+
+  function renderRevisionDueDashboard() {
+    const tbody = document.getElementById("revision-due-tbody");
+    const items = getAllDueRevisions();
+
+    updateRevisionOverviewBadges();
+
+    if (!tbody) return;
+
+    if (items.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state">Nothing due today. Set lecture completion dates in a subject's chapter tracker to generate more revision stages.</div></td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = "";
+    items.forEach(item => {
+      const { subject, chapter, stage, entry } = item;
+      const meta = GROUP_META[subject.grp];
+
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td style="color:${meta.tint};font-weight:600">${subject.name}</td>
+        <td>${escapeHtml(chapter.name) || "(untitled chapter)"}</td>
+        <td><span class="stage-pill">${stage.label} &middot; Day ${stage.offset}</span></td>
+        <td>
+          <label class="due-status-check pending">
+            <input type="checkbox" class="due-done-checkbox" />
+            <span>Due today</span>
+          </label>
+        </td>
+        <td></td>
+      `;
+
+      tr.querySelector(".due-done-checkbox").addEventListener("change", (e) => {
+        if (!e.target.checked) return;
+        entry.done = true;
+        persist();
+
+        tr.classList.add("revised-pulse");
+        showToast(`${stage.label} marked done — ${chapter.name || "chapter"}`);
+
+        setTimeout(() => {
+          renderRevisionDueDashboard();
+          renderRevisionBacklogDashboard();
+          renderSubjectList();
+        }, 550);
+      });
+
+      tbody.appendChild(tr);
+    });
+  }
+
+  // ---------- Revision Backlog (own dashboard, cross-subject) ----------
+  // Same source and same "not done" filter as Chapters Due for Revision,
+  // but scanning every stage whose date has already passed rather than
+  // just the one currently selected date.
+  // ---------- Revision Backlog (own dashboard, cross-subject) ----------
+  // Same source as Chapters Due for Revision (every subject's spaced
+  // revision R1–R5 data), filtered to only stages whose due date has
+  // already passed and were never marked done that day. Never shows
+  // today's or future stages — those stay on Chapters Due for Revision
+  // until their day passes, at which point they land here automatically.
+  function getAllBacklogRevisions() {
+    const todayStr = todayISO();
+    const backlog = [];
+    SUBJECTS.forEach(s => {
+      const chapters = getChapters(s.id);
+      chapters.forEach(ch => {
+        if (!ch.lectureDate) return;
+        recalcSpacedRevisionDates(ch);
+        const sr = ensureSpacedRevision(ch);
+        REVISION_STAGES.forEach(stage => {
+          const entry = sr[stage.key];
+          if (entry.date && entry.date < todayStr && !entry.done) {
+            backlog.push({ subject: s, chapter: ch, stage, entry });
+          }
+        });
+      });
+    });
+    backlog.sort((a, b) => a.entry.date < b.entry.date ? -1 : (a.entry.date > b.entry.date ? 1 : 0));
+    return backlog;
+  }
+
+  function openRevisionBacklogDashboard() {
+    backAction = null;
+    showView("revision-backlog");
+    document.getElementById("header-subtitle").textContent = "Chapters that were due on a past day and never marked done, pulled from Chapters Due for Revision.";
+    renderRevisionBacklogPage();
+  }
+
+  function renderRevisionBacklogPage() {
+    const container = document.getElementById("view-revision-backlog");
+    container.innerHTML = `
+      <div class="subject-title-row">
+        <div class="subject-title">Revision Backlog</div>
+      </div>
+      <p class="daily-sub">Chapters from Chapters Due for Revision that were not marked done on their day. Automatically grows each day something is missed — never shows today's or future work.</p>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:20%">Subject</th>
+              <th style="width:26%">Chapter</th>
+              <th>Stage</th>
+              <th>Was due</th>
+              <th>Days overdue</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="revision-backlog-tbody"></tbody>
+        </table>
+      </div>
+    `;
+
+    renderRevisionBacklogDashboard();
+  }
+
+  function renderRevisionBacklogDashboard() {
+    const tbody = document.getElementById("revision-backlog-tbody");
+    const items = getAllBacklogRevisions();
+    const todayStr = todayISO();
+
+    updateRevisionOverviewBadges();
+
+    if (!tbody) return;
+
+    if (items.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="6"><div class="empty-state">No backlog — nothing missed so far.</div></td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = "";
+    items.forEach(item => {
+      const { subject, chapter, stage, entry } = item;
+      const meta = GROUP_META[subject.grp];
+      const daysOverdue = daysBetween(entry.date, todayStr);
+
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td style="color:${meta.tint};font-weight:600">${subject.name}</td>
+        <td>${escapeHtml(chapter.name) || "(untitled chapter)"}</td>
+        <td><span class="stage-pill">${stage.label} &middot; Day ${stage.offset}</span></td>
+        <td>${entry.date}</td>
+        <td><span class="due-status overdue">${daysOverdue} day${daysOverdue === 1 ? "" : "s"}</span></td>
+        <td>
+          <label class="due-status-check overdue">
+            <input type="checkbox" class="due-done-checkbox" />
+            <span>Overdue</span>
+          </label>
+        </td>
+      `;
+
+      tr.querySelector(".due-done-checkbox").addEventListener("change", (e) => {
+        if (!e.target.checked) return;
+        entry.done = true;
+        persist();
+
+        tr.classList.add("revised-pulse");
+        showToast(`${stage.label} marked done — ${chapter.name || "chapter"}`);
+
+        setTimeout(() => {
+          renderRevisionBacklogDashboard();
+          renderRevisionDueDashboard();
+          renderSubjectList();
+        }, 550);
+      });
+
+      tbody.appendChild(tr);
+    });
+  }
+
+  // ---------- Home page overview tile badges ----------
+  function updateRevisionOverviewBadges() {
+    const dueBadge = document.getElementById("revision-due-count-badge");
+    const dueSummary = document.getElementById("revision-due-summary");
+    const backlogBadge = document.getElementById("revision-backlog-count-badge");
+    const backlogSummary = document.getElementById("revision-backlog-summary");
+    const shortcutDueBadge = document.getElementById("shortcut-due-badge");
+    const shortcutBacklogBadge = document.getElementById("shortcut-backlog-badge");
+
+    const dueCount = getAllDueRevisions().length;
+    const backlogCount = getAllBacklogRevisions().length;
+
+    if (dueBadge) {
+      dueBadge.textContent = dueCount;
+      dueSummary.textContent = dueCount === 0 ? "nothing due today" : `${dueCount} due today`;
+    }
+
+    if (backlogBadge) {
+      backlogBadge.textContent = backlogCount;
+      backlogSummary.textContent = backlogCount === 0 ? "no backlog" : `${backlogCount} overdue`;
+    }
+
+    if (shortcutDueBadge) {
+      shortcutDueBadge.textContent = dueCount > 99 ? "99+" : dueCount;
+      shortcutDueBadge.classList.toggle("visible", dueCount > 0);
+    }
+
+    if (shortcutBacklogBadge) {
+      shortcutBacklogBadge.textContent = backlogCount > 99 ? "99+" : backlogCount;
+      shortcutBacklogBadge.classList.toggle("visible", backlogCount > 0);
+    }
+  }
+
+  // ---------- Calendar view ----------
+  let calViewYear, calViewMonth; // month is 0-indexed
+
+  function initCalendarState() {
+    const t = new Date();
+    calViewYear = t.getFullYear();
+    calViewMonth = t.getMonth();
+  }
+
+  function renderCalendar() {
+    const dowRow = document.getElementById("cal-dow-row");
+    dowRow.innerHTML = DOW_NAMES.map(d => `<div class="cal-dow">${d}</div>`).join("");
+
+    document.getElementById("cal-month-label").textContent = `${MONTH_NAMES[calViewMonth]} ${calViewYear}`;
+
+    // Keep the header date-strip in sync with whatever month the calendar is showing
+    const syncEl = document.getElementById("calendar-sync-display");
+    if (syncEl) syncEl.textContent = `${MONTH_NAMES[calViewMonth]} ${calViewYear}`;
+
+    const weeksContainer = document.getElementById("cal-weeks");
+    weeksContainer.innerHTML = "";
+
+    const firstOfMonth = new Date(calViewYear, calViewMonth, 1);
+    const startDow = firstOfMonth.getDay();
+    const daysInMonth = new Date(calViewYear, calViewMonth + 1, 0).getDate();
+    const daysInPrevMonth = new Date(calViewYear, calViewMonth, 0).getDate();
+    const todayStr = todayISO();
+
+    const cells = [];
+
+    // Leading days from previous month
+    for (let i = startDow - 1; i >= 0; i--) {
+      const dayNum = daysInPrevMonth - i;
+      const m = calViewMonth === 0 ? 11 : calViewMonth - 1;
+      const y = calViewMonth === 0 ? calViewYear - 1 : calViewYear;
+      cells.push({ dateStr: isoDate(y, m, dayNum), dayNum, outside: true });
+    }
+
+    // Current month days
+    for (let d = 1; d <= daysInMonth; d++) {
+      cells.push({ dateStr: isoDate(calViewYear, calViewMonth, d), dayNum: d, outside: false });
+    }
+
+    // Trailing days from next month to complete final week
+    while (cells.length % 7 !== 0) {
+      const nextIdx = cells.length - (startDow + daysInMonth) + 1;
+      const m = calViewMonth === 11 ? 0 : calViewMonth + 1;
+      const y = calViewMonth === 11 ? calViewYear + 1 : calViewYear;
+      cells.push({ dateStr: isoDate(y, m, nextIdx), dayNum: nextIdx, outside: true });
+    }
+
+    for (let w = 0; w < cells.length / 7; w++) {
+      const weekRow = document.createElement("div");
+      weekRow.className = "cal-week";
+      for (let i = 0; i < 7; i++) {
+        const cell = cells[w * 7 + i];
+        const entries = DAILY[cell.dateStr] || [];
+        const isToday = cell.dateStr === todayStr;
+
+        const btn = document.createElement("button");
+        btn.className = "cal-day" + (cell.outside ? " outside" : "") + (isToday ? " today" : "");
+        btn.setAttribute("data-date", cell.dateStr);
+
+        let dotsHtml = "";
+        let pctBadgeHtml = "";
+        if (entries.length > 0) {
+          const dots = entries.slice(0, 6).map(e => {
+            const subj = subjectById(e.subjectId);
+            const tint = subj ? GROUP_META[subj.grp].tint : "#1c1c1a";
+            const fullyDone = e.mcqDone && e.lectureDone && e.revisionDone;
+            const color = fullyDone ? tint : "#c9c2b0";
+            return `<span class="cal-mini-dot" style="background:${color}"></span>`;
+          }).join("");
+          dotsHtml = `<div class="cal-dot-row">${dots}</div>`;
+
+          // Completion % across MCQ/Lecture/Revision ticks for this day's entries
+          const totalChecks = entries.length * 3;
+          const doneChecks = entries.reduce((sum, e) =>
+            sum + (e.mcqDone ? 1 : 0) + (e.lectureDone ? 1 : 0) + (e.revisionDone ? 1 : 0), 0);
+          const pct = totalChecks > 0 ? Math.round((doneChecks / totalChecks) * 100) : 0;
+          const pctClass = pct === 100 ? "full" : (pct === 0 ? "empty" : "partial");
+          pctBadgeHtml = `<span class="cal-pct-badge ${pctClass}" title="${pct}% of MCQ/Lecture/Revision ticks done">${pct}%</span>`;
+        }
+
+        btn.innerHTML = `
+          <div class="cal-day-top-row">
+            <span class="cal-daynum">${cell.dayNum}</span>
+            ${pctBadgeHtml}
+          </div>
+          ${entries.length ? `<span class="cal-entry-count">${entries.length} entr${entries.length === 1 ? "y" : "ies"}</span>` : ""}
+          ${dotsHtml}
+        `;
+
+        btn.addEventListener("click", () => {
+          openDay(cell.dateStr);
+        });
+        weekRow.appendChild(btn);
+      }
+      weeksContainer.appendChild(weekRow);
+    }
+  }
+
+  document.getElementById("cal-prev").addEventListener("click", () => {
+    calViewMonth -= 1;
+    if (calViewMonth < 0) { calViewMonth = 11; calViewYear -= 1; }
+    renderCalendar();
+  });
+
+  document.getElementById("cal-next").addEventListener("click", () => {
+    calViewMonth += 1;
+    if (calViewMonth > 11) { calViewMonth = 0; calViewYear += 1; }
+    renderCalendar();
+  });
+
+  document.getElementById("cal-today-btn").addEventListener("click", () => {
+    initCalendarState();
+    renderCalendar();
+  });
+
+  // ---------- Day detail (daily work target) view ----------
+  function formatDateLong(dateStr) {
+    const [y, m, d] = dateStr.split("-").map(Number);
+    const date = new Date(y, m - 1, d);
+    const dow = DOW_NAMES[date.getDay()];
+    return `${dow}, ${MONTH_NAMES[m - 1]} ${d}, ${y}`;
+  }
+
+  function subjectOptionsHtml(selectedId) {
+    return GROUPS.map(grp => {
+      const opts = SUBJECTS.filter(s => s.grp === grp).map(s =>
+        `<option value="${s.id}" ${s.id === selectedId ? "selected" : ""}>${s.name}</option>`
+      ).join("");
+      return `<optgroup label="${grp}">${opts}</optgroup>`;
+    }).join("");
+  }
+
+  function openDay(dateStr) {
+    showView("day");
+    document.getElementById("header-subtitle").textContent = "Log this day's work target — everything below is editable.";
+    renderDayView(dateStr);
+  }
+
+  function renderDayView(dateStr) {
+    const container = document.getElementById("view-day");
+    const entries = getDayEntries(dateStr);
+
+    const totalMcq = entries.reduce((a, e) => a + (Number(e.mcq) || 0), 0);
+    const doneCount = entries.filter(e => e.mcqDone && e.lectureDone && e.revisionDone).length;
+
+    container.innerHTML = `
+      <div class="subject-title-row">
+        <div class="subject-title">${formatDateLong(dateStr)}</div>
+      </div>
+      <div class="subject-stats">
+        <span><strong>${entries.length}</strong> entries</span>
+        <span><strong>${totalMcq}</strong> MCQs logged</span>
+        <span><strong>${doneCount}</strong>/${entries.length || 0} fully done</span>
+      </div>
+
+      <div class="toolbar">
+        <button class="add-btn" id="add-day-entry-btn">+ Add entry</button>
+        <span class="save-note">changes save automatically</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:22%">Subject</th>
+              <th>MCQ</th>
+              <th>Lecture</th>
+              <th>Revision</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="day-tbody"></tbody>
+        </table>
+      </div>
+    `;
+
+    document.getElementById("add-day-entry-btn").addEventListener("click", () => {
+      entries.push({
+        id: uid(),
+        subjectId: SUBJECTS[0].id,
+        mcq: "", mcqDone: false,
+        lecture: "", lectureDone: false,
+        revision: "none", revisionDone: false,
+      });
+      persistDaily();
+      renderDayView(dateStr);
+    });
+
+    renderDayRows(dateStr, entries);
+  }
+
+  function renderDayRows(dateStr, entries) {
+    const tbody = document.getElementById("day-tbody");
+
+    if (entries.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state">No entries yet for this date — click "+ Add entry" to log a target.</div></td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = "";
+    entries.forEach(entry => {
+      const tr = document.createElement("tr");
+      if (entry.mcqDone && entry.lectureDone && entry.revisionDone) tr.classList.add("daily-row-done");
+
+      tr.innerHTML = `
+        <td>
+          <select class="subject-select" data-field="subjectId">
+            ${subjectOptionsHtml(entry.subjectId)}
+          </select>
+        </td>
+        <td>
+          <div class="field-with-check">
+            <input type="number" min="0" placeholder="0" value="${entry.mcq}" data-field="mcq" />
+            <input type="checkbox" class="field-done-check" data-field="mcqDone" ${entry.mcqDone ? "checked" : ""} title="Mark MCQs done" />
+          </div>
+        </td>
+        <td>
+          <div class="field-with-check">
+            <input type="text" placeholder="e.g. Ch 4" value="${escapeHtml(entry.lecture)}" data-field="lecture" />
+            <input type="checkbox" class="field-done-check" data-field="lectureDone" ${entry.lectureDone ? "checked" : ""} title="Mark lecture done" />
+          </div>
+        </td>
+        <td>
+          <div class="field-with-check">
+            <select class="revision-select" data-field="revision">
+              <option value="none" ${entry.revision === "none" ? "selected" : ""}>Not started</option>
+              <option value="progress" ${entry.revision === "progress" ? "selected" : ""}>In progress</option>
+              <option value="done" ${entry.revision === "done" ? "selected" : ""}>Revised</option>
+            </select>
+            <input type="checkbox" class="field-done-check" data-field="revisionDone" ${entry.revisionDone ? "checked" : ""} title="Mark revision done" />
+          </div>
+        </td>
+        <td><button class="del-btn" title="Delete entry" aria-label="Delete entry">&times;</button></td>
+      `;
+
+      tr.querySelectorAll("input, select").forEach(el => {
+        const evt = el.tagName === "SELECT" ? "change" : (el.type === "checkbox" ? "change" : "input");
+        el.addEventListener(evt, () => {
+          const field = el.getAttribute("data-field");
+          entry[field] = el.type === "checkbox" ? el.checked : el.value;
+          persistDaily();
+          if (el.type === "checkbox") {
+            renderDayView(dateStr);
+          } else {
+            updateDayStats(entries);
+          }
+        });
+      });
+
+      tr.querySelector(".del-btn").addEventListener("click", () => {
+        const idx = entries.findIndex(e => e.id === entry.id);
+        if (idx > -1) entries.splice(idx, 1);
+        persistDaily();
+        renderDayView(dateStr);
+        showToast("Entry removed");
+      });
+
+      tbody.appendChild(tr);
+    });
+  }
+
+  function updateDayStats(entries) {
+    const totalMcq = entries.reduce((a, e) => a + (Number(e.mcq) || 0), 0);
+    const doneCount = entries.filter(e => e.mcqDone && e.lectureDone && e.revisionDone).length;
+    const statsEl = document.querySelector("#view-day .subject-stats");
+    if (statsEl) {
+      statsEl.innerHTML = `
+        <span><strong>${entries.length}</strong> entries</span>
+        <span><strong>${totalMcq}</strong> MCQs logged</span>
+        <span><strong>${doneCount}</strong>/${entries.length || 0} fully done</span>
+      `;
+    }
+  }
+
+  // ---------- Date strip: today + exam date + countdown ----------
+  const EXAM_DATE_KEY = "rounds_exam_date_v1";
+
+  function formatDateShort(dateStr) {
+    const [y, m, d] = dateStr.split("-").map(Number);
+    const date = new Date(y, m - 1, d);
+    return `${DOW_NAMES[date.getDay()]}, ${MONTH_NAMES[m - 1]} ${d}, ${y}`;
+  }
+
+  function daysBetween(fromStr, toStr) {
+    const [fy, fm, fd] = fromStr.split("-").map(Number);
+    const [ty, tm, td] = toStr.split("-").map(Number);
+    const from = new Date(fy, fm - 1, fd);
+    const to = new Date(ty, tm - 1, td);
+    const msPerDay = 24 * 60 * 60 * 1000;
+    return Math.round((to - from) / msPerDay);
+  }
+
+  function loadExamDate() {
+    try {
+      return localStorage.getItem(EXAM_DATE_KEY) || "";
+    } catch (e) {
+      console.error("Failed to load exam date", e);
+      return "";
+    }
+  }
+
+  function saveExamDate(dateStr) {
+    try {
+      localStorage.setItem(EXAM_DATE_KEY, dateStr);
+      return true;
+    } catch (e) {
+      console.error("Failed to save exam date", e);
+      return false;
+    }
+  }
+
+  function updateCountdown() {
+    const examInput = document.getElementById("exam-date-input");
+    const countdownEl = document.getElementById("countdown-display");
+    const examDate = examInput.value;
+
+    if (!examDate) {
+      countdownEl.textContent = "—";
+      return;
+    }
+
+    const diff = daysBetween(todayISO(), examDate);
+    if (diff > 0) {
+      countdownEl.textContent = `${diff} day${diff === 1 ? "" : "s"}`;
+    } else if (diff === 0) {
+      countdownEl.textContent = "Today";
+    } else {
+      countdownEl.textContent = `${Math.abs(diff)} day${Math.abs(diff) === 1 ? "" : "s"} ago`;
+    }
+  }
+
+  function initDateStrip() {
+    document.getElementById("today-display").textContent = formatDateShort(todayISO());
+
+    const examInput = document.getElementById("exam-date-input");
+    const saved = loadExamDate();
+    if (saved) {
+      examInput.value = saved;
+    }
+
+    examInput.addEventListener("change", () => {
+      const val = examInput.value;
+      const ok = saveExamDate(val);
+      if (ok) {
+        showToast(val ? "Exam date saved" : "Exam date cleared");
+      } else {
+        showToast("Save failed — storage may be full");
+      }
+      updateCountdown();
+    });
+
+    updateCountdown();
+
+    // clicking "Today" jumps the calendar below to the current month
+    const todayEl = document.getElementById("today-display");
+    todayEl.style.cursor = "pointer";
+    todayEl.title = "Jump calendar to this month";
+    todayEl.addEventListener("click", () => {
+      initCalendarState();
+      renderCalendar();
+    });
+  }
+
+  // ---------- Backup: export / import all app data as one JSON file ----------
+  const BACKUP_LAST_KEY = "rounds_backup_last_v1";
+  const BACKUP_FORMAT_VERSION = 1;
+
+  // All localStorage keys this app writes to. Keep this list in sync if a
+  // new persisted feature is added — anything not listed here won't be
+  // included in exports or restored on import.
+  const ALL_STORAGE_KEYS = {
+    chapters: "rounds_chapter_data_v1",
+    daily: "rounds_daily_targets_v2",
+    examDate: "rounds_exam_date_v1",
+    timerSettings: "rounds_timer_settings_v1",
+    timerVisible: "rounds_timer_visible_v1",
+    profileInfo: "rounds_profile_info_v1",
+    subjectNames: "rounds_subject_names_v1",
+    tileColor: "rounds_tile_color_v1",
+    bgColor: "rounds_bg_color_v1",
+    headerLabels: "rounds_header_labels_v1",
+    groupLabels: "rounds_group_labels_v1",
+    customSubjects: "rounds_custom_subjects_v1",
+  };
+
+  function buildBackupPayload() {
+    const data = {};
+    Object.entries(ALL_STORAGE_KEYS).forEach(([label, key]) => {
+      const raw = localStorage.getItem(key);
+      data[key] = raw !== null ? raw : null;
+    });
+    return {
+      app: "MBBS Dashboard",
+      formatVersion: BACKUP_FORMAT_VERSION,
+      exportedAt: new Date().toISOString(),
+      data,
+    };
+  }
+
+  function downloadJSON(filename, obj) {
+    const blob = new Blob([JSON.stringify(obj, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function exportBackup() {
+    const payload = buildBackupPayload();
+    const dateSlug = todayISO();
+    downloadJSON(`mbbs-dashboard-backup-${dateSlug}.json`, payload);
+
+    try {
+      localStorage.setItem(BACKUP_LAST_KEY, new Date().toISOString());
+    } catch (e) {
+      console.error("Failed to record backup timestamp", e);
+    }
+    renderBackupLastDisplay();
+    showToast("Backup downloaded");
+  }
+
+  function validateBackupPayload(obj) {
+    if (!obj || typeof obj !== "object") return "File is not a valid backup (not an object).";
+    if (obj.app !== "MBBS Dashboard") return "File doesn't look like an MBBS Dashboard backup.";
+    if (!obj.data || typeof obj.data !== "object") return "Backup file is missing its data section.";
+    return null;
+  }
+
+  function restoreBackupPayload(obj) {
+    Object.values(ALL_STORAGE_KEYS).forEach((key) => {
+      const value = obj.data[key];
+      if (value === null || value === undefined) {
+        localStorage.removeItem(key);
+      } else {
+        localStorage.setItem(key, value);
+      }
+    });
+  }
+
+  function reloadAllStateFromStorage() {
+    // Re-read every in-memory store from localStorage and refresh every view.
+    DATA = loadData();
+    DAILY = loadDaily();
+
+    const savedExam = loadExamDate();
+    const examInput = document.getElementById("exam-date-input");
+    if (examInput) examInput.value = savedExam || "";
+    updateCountdown();
+
+    const savedTimer = loadTimerSettings();
+    if (savedTimer) {
+      timerMode = savedTimer.mode || "stopwatch";
+      timerDurationSec = savedTimer.durationSec || 25 * 60;
+      timerRemainingSec = timerMode === "countdown" ? timerDurationSec : 0;
+      pauseTimer();
+      const stopwatchRadio = document.getElementById("mode-stopwatch");
+      const countdownRadio = document.getElementById("mode-countdown");
+      if (stopwatchRadio) stopwatchRadio.checked = timerMode === "stopwatch";
+      if (countdownRadio) countdownRadio.checked = timerMode === "countdown";
+      const hEl = document.getElementById("timer-hours");
+      const mEl = document.getElementById("timer-minutes");
+      const sEl = document.getElementById("timer-seconds");
+      if (hEl) hEl.value = Math.floor(timerDurationSec / 3600);
+      if (mEl) mEl.value = Math.floor((timerDurationSec % 3600) / 60);
+      if (sEl) sEl.value = timerDurationSec % 60;
+      updateTimerDisplay();
+    }
+
+    const savedProfile = loadProfileInfo();
+    const nameInput = document.getElementById("profile-name-input");
+    const workInput = document.getElementById("profile-work-input");
+    const phoneInput = document.getElementById("profile-phone-input");
+    const emailInput = document.getElementById("profile-email-input");
+    if (nameInput) nameInput.value = savedProfile.name || "";
+    if (workInput) workInput.value = savedProfile.work || "";
+    if (phoneInput) phoneInput.value = savedProfile.phone || "";
+    if (emailInput) emailInput.value = savedProfile.email || "";
+    updateOwnerBadge(savedProfile);
+
+    // Subject renames, custom subjects, tile color, background color,
+    // header title/exam name, and timer visibility all need to be
+    // re-applied too — without this, a restored backup would leave stale
+    // values on screen until a manual page reload, even though the
+    // underlying data was updated.
+    mergeCustomSubjects();
+    applySubjectNameOverrides();
+
+    const savedTileColor = loadTileColor();
+    applyTileColor(savedTileColor);
+    renderColorSwatchGrid(savedTileColor);
+
+    const savedBgColor = loadBgColor();
+    applyBgColor(savedBgColor);
+    renderBgColorSwatchGrid(savedBgColor);
+
+    const savedLabels = loadHeaderLabels();
+    const titleEl = document.getElementById("main-title-text");
+    const exam1El = document.getElementById("exam-name-1-text");
+    if (titleEl) titleEl.textContent = savedLabels.title || "MBBS Dashboard";
+    if (exam1El) exam1El.textContent = savedLabels.exam1 || "INI-CET";
+
+    setTimerVisible(loadTimerVisible());
+
+    goHome();
+  }
+
+  function importBackupFromFile(file) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      let parsed;
+      try {
+        parsed = JSON.parse(reader.result);
+      } catch (e) {
+        showToast("That file isn't valid JSON");
+        return;
+      }
+
+      const error = validateBackupPayload(parsed);
+      if (error) {
+        showToast(error);
+        return;
+      }
+
+      const confirmed = window.confirm(
+        "Import this backup? This will replace all current chapters, revision progress, daily targets, exam date, and timer settings on this device."
+      );
+      if (!confirmed) return;
+
+      restoreBackupPayload(parsed);
+      reloadAllStateFromStorage();
+      showToast("Backup restored");
+    };
+    reader.onerror = () => showToast("Couldn't read that file");
+    reader.readAsText(file);
+  }
+
+  function renderBackupLastDisplay() {
+    const btn = document.getElementById("export-backup-btn");
+    if (!btn) return;
+    let last;
+    try {
+      last = localStorage.getItem(BACKUP_LAST_KEY);
+    } catch (e) {
+      last = null;
+    }
+    if (!last) {
+      btn.title = "Export backup (download JSON) — no backup yet";
+      return;
+    }
+    const d = new Date(last);
+    const dow = DOW_NAMES[d.getDay()];
+    const month = MONTH_NAMES[d.getMonth()];
+    btn.title = `Export backup (download JSON) — last backup: ${dow}, ${month} ${d.getDate()}`;
+  }
+
+  function initBackupStrip() {
+    renderBackupLastDisplay();
+
+    document.getElementById("export-backup-btn").addEventListener("click", exportBackup);
+
+    const fileInput = document.getElementById("import-file-input");
+    document.getElementById("import-backup-btn").addEventListener("click", () => {
+      fileInput.value = ""; // allow re-selecting the same file twice in a row
+      fileInput.click();
+    });
+    fileInput.addEventListener("change", (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (file) importBackupFromFile(file);
+    });
+  }
+
+  // ---------- Sync: keep one backup file up to date on demand ----------
+  // Uses the File System Access API where supported (Chrome, Edge, and
+  // other Chromium browsers) so the user picks a real file once and every
+  // "Sync now" click overwrites that exact same file — the browser's own
+  // save dialog is what shows the real path, since a webpage is never
+  // allowed to know or choose a file path on its own for security reasons.
+  // Falls back to a normal re-download (with the OS "Save As" dialog, which
+  // also shows the destination) on browsers without that API — Safari/iOS
+  // included.
+  const SYNC_LAST_KEY = "rounds_sync_last_v1";
+  const SYNC_FILENAME_KEY = "rounds_sync_filename_v1";
+  let syncFileHandle = null; // only lives for this page session
+
+  function loadSyncMeta() {
+    try {
+      return {
+        last: localStorage.getItem(SYNC_LAST_KEY),
+        filename: localStorage.getItem(SYNC_FILENAME_KEY),
+      };
+    } catch (e) {
+      return { last: null, filename: null };
+    }
+  }
+
+  function saveSyncMeta(filename) {
+    try {
+      localStorage.setItem(SYNC_LAST_KEY, new Date().toISOString());
+      if (filename) localStorage.setItem(SYNC_FILENAME_KEY, filename);
+    } catch (e) {
+      console.error("Failed to save sync metadata", e);
+    }
+  }
+
+  function renderSyncStatus() {
+    const el = document.getElementById("backup-sync-status");
+    if (!el) return;
+    const meta = loadSyncMeta();
+
+    if (!meta.last) {
+      el.textContent = "Not synced yet";
+      el.classList.remove("synced");
+      return;
+    }
+
+    const d = new Date(meta.last);
+    const dow = DOW_NAMES[d.getDay()];
+    const month = MONTH_NAMES[d.getMonth()];
+    const time = `${dow}, ${month} ${d.getDate()} · ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+
+    if (syncFileHandle && meta.filename) {
+      el.textContent = `Synced to "${meta.filename}" — ${time}`;
+    } else if (meta.filename) {
+      el.textContent = `Last synced: ${time} (re-pick "${meta.filename}" to overwrite it again, or check your Downloads folder)`;
+    } else {
+      el.textContent = `Last synced: ${time} — check your browser's Downloads folder`;
+    }
+    el.classList.add("synced");
+  }
+
+  async function syncBackupNow() {
+    const payload = buildBackupPayload();
+    const jsonText = JSON.stringify(payload, null, 2);
+    const suggestedName = `mbbs-dashboard-sync.json`;
+
+    // Preferred path: File System Access API — lets us write to the exact
+    // same file every time after the user picks it once this session.
+    if (window.showSaveFilePicker) {
+      try {
+        if (!syncFileHandle) {
+          syncFileHandle = await window.showSaveFilePicker({
+            suggestedName,
+            types: [{ description: "JSON backup", accept: { "application/json": [".json"] } }],
+          });
+        }
+        const writable = await syncFileHandle.createWritable();
+        await writable.write(jsonText);
+        await writable.close();
+
+        saveSyncMeta(syncFileHandle.name || suggestedName);
+        renderSyncStatus();
+        showToast(`Synced to "${syncFileHandle.name || suggestedName}"`);
+        return;
+      } catch (err) {
+        if (err && err.name === "AbortError") {
+          // user cancelled the file picker — do nothing further
+          return;
+        }
+        console.error("File System Access sync failed, falling back to download", err);
+        syncFileHandle = null;
+        // fall through to the download fallback below
+      }
+    }
+
+    // Fallback: browsers without File System Access support (Safari/iOS).
+    // This downloads a fresh file each time via the browser's normal save
+    // flow — if "Ask where to save each file" is on, the OS dialog shows
+    // the real destination path.
+    downloadJSON(suggestedName, payload);
+    saveSyncMeta(suggestedName);
+    renderSyncStatus();
+    showToast("Synced — check your Downloads folder");
+  }
+
+  function initSyncButton() {
+    renderSyncStatus();
+    document.getElementById("sync-backup-btn").addEventListener("click", () => {
+      syncBackupNow();
+    });
+  }
+
+  // ---------- Study timer widget (top of page) ----------
+  const TIMER_SETTINGS_KEY = "rounds_timer_settings_v1";
+
+  let timerMode = "stopwatch"; // "stopwatch" | "countdown"
+  let timerDurationSec = 25 * 60; // used only for countdown mode
+  let timerRemainingSec = 0;      // countdown: seconds left; stopwatch: seconds elapsed
+  let timerRunning = false;
+  let timerIntervalId = null;
+
+  function loadTimerSettings() {
+    try {
+      const raw = localStorage.getItem(TIMER_SETTINGS_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) {
+      console.error("Failed to load timer settings", e);
+      return null;
+    }
+  }
+
+  function saveTimerSettings() {
+    try {
+      localStorage.setItem(TIMER_SETTINGS_KEY, JSON.stringify({ mode: timerMode, durationSec: timerDurationSec }));
+      return true;
+    } catch (e) {
+      console.error("Failed to save timer settings", e);
+      return false;
+    }
+  }
+
+  function formatHMS(totalSeconds) {
+    const s = Math.max(0, totalSeconds);
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const sec = s % 60;
+    return `${pad2(h)}:${pad2(m)}:${pad2(sec)}`;
+  }
+
+  function updateTimerDisplay() {
+    const displayEl = document.getElementById("timer-display");
+    const modeLabelEl = document.getElementById("timer-mode-label");
+
+    displayEl.textContent = formatHMS(timerRemainingSec);
+    modeLabelEl.textContent = timerMode === "countdown" ? "Countdown" : "Stopwatch";
+
+    displayEl.classList.remove("timer-running", "timer-warning", "timer-done");
+    if (timerMode === "countdown") {
+      if (timerRemainingSec <= 0) {
+        displayEl.classList.add("timer-done");
+      } else if (timerRemainingSec <= 60) {
+        displayEl.classList.add("timer-warning");
+      } else if (timerRunning) {
+        displayEl.classList.add("timer-running");
+      }
+    } else if (timerRunning) {
+      displayEl.classList.add("timer-running");
+    }
+  }
+
+  function tickTimer() {
+    if (timerMode === "countdown") {
+      timerRemainingSec -= 1;
+      if (timerRemainingSec <= 0) {
+        timerRemainingSec = 0;
+        updateTimerDisplay();
+        stopTimer();
+        showToast("Timer complete");
+        return;
+      }
+    } else {
+      timerRemainingSec += 1;
+    }
+    updateTimerDisplay();
+  }
+
+  function startTimer() {
+    if (timerRunning) return;
+    if (timerMode === "countdown" && timerRemainingSec <= 0) {
+      timerRemainingSec = timerDurationSec;
+    }
+    timerRunning = true;
+    timerIntervalId = setInterval(tickTimer, 1000);
+    const startBtn = document.getElementById("timer-start-btn");
+    startBtn.textContent = "Pause";
+    startBtn.classList.add("is-running");
+    updateTimerDisplay();
+  }
+
+  function pauseTimer() {
+    timerRunning = false;
+    clearInterval(timerIntervalId);
+    timerIntervalId = null;
+    const startBtn = document.getElementById("timer-start-btn");
+    startBtn.textContent = "Start";
+    startBtn.classList.remove("is-running");
+    updateTimerDisplay();
+  }
+
+  function stopTimer() {
+    pauseTimer();
+  }
+
+  function resetTimer() {
+    pauseTimer();
+    timerRemainingSec = timerMode === "countdown" ? timerDurationSec : 0;
+    updateTimerDisplay();
+  }
+
+  function applyTimerSettings() {
+    const h = Math.max(0, Math.min(23, Number(document.getElementById("timer-hours").value) || 0));
+    const m = Math.max(0, Math.min(59, Number(document.getElementById("timer-minutes").value) || 0));
+    const s = Math.max(0, Math.min(59, Number(document.getElementById("timer-seconds").value) || 0));
+    timerDurationSec = h * 3600 + m * 60 + s;
+
+    const isCountdown = document.getElementById("mode-countdown").checked;
+    timerMode = isCountdown ? "countdown" : "stopwatch";
+
+    pauseTimer();
+    timerRemainingSec = timerMode === "countdown" ? timerDurationSec : 0;
+    updateTimerDisplay();
+    saveTimerSettings();
+    document.getElementById("timer-settings-panel").classList.remove("visible");
+    showToast("Timer settings saved");
+  }
+
+  function initTimerWidget() {
+    const saved = loadTimerSettings();
+    if (saved) {
+      timerMode = saved.mode || "stopwatch";
+      timerDurationSec = saved.durationSec || 25 * 60;
+    }
+    timerRemainingSec = timerMode === "countdown" ? timerDurationSec : 0;
+
+    document.getElementById("mode-stopwatch").checked = timerMode === "stopwatch";
+    document.getElementById("mode-countdown").checked = timerMode === "countdown";
+    document.getElementById("timer-hours").value = Math.floor(timerDurationSec / 3600);
+    document.getElementById("timer-minutes").value = Math.floor((timerDurationSec % 3600) / 60);
+    document.getElementById("timer-seconds").value = timerDurationSec % 60;
+
+    updateTimerDisplay();
+
+    document.getElementById("timer-start-btn").addEventListener("click", () => {
+      if (timerRunning) {
+        pauseTimer();
+      } else {
+        startTimer();
+      }
+    });
+
+    document.getElementById("timer-reset-btn").addEventListener("click", () => {
+      resetTimer();
+      showToast("Timer reset");
+    });
+
+    document.getElementById("timer-settings-btn").addEventListener("click", () => {
+      document.getElementById("timer-settings-panel").classList.toggle("visible");
+    });
+
+    document.getElementById("timer-apply-btn").addEventListener("click", applyTimerSettings);
+
+    initTimerToggle();
+  }
+
+  // ---------- Timer widget show/hide toggle ----------
+  const TIMER_VISIBLE_KEY = "rounds_timer_visible_v1";
+
+  function loadTimerVisible() {
+    try {
+      const raw = localStorage.getItem(TIMER_VISIBLE_KEY);
+      return raw === null ? true : raw === "true"; // default: visible
+    } catch (e) {
+      return true;
+    }
+  }
+
+  function saveTimerVisible(visible) {
+    try {
+      localStorage.setItem(TIMER_VISIBLE_KEY, String(visible));
+    } catch (e) {
+      console.error("Failed to save timer visibility", e);
+    }
+  }
+
+  function setTimerVisible(visible) {
+    const wrap = document.getElementById("timer-toggle-wrap");
+    const btn = document.getElementById("timer-toggle-btn");
+    wrap.classList.toggle("collapsed", !visible);
+    btn.setAttribute("aria-pressed", String(visible));
+    btn.title = visible ? "Hide study timer" : "Show study timer";
+  }
+
+  function initTimerToggle() {
+    const visible = loadTimerVisible();
+    setTimerVisible(visible);
+
+    document.getElementById("timer-toggle-btn").addEventListener("click", () => {
+      const wrap = document.getElementById("timer-toggle-wrap");
+      const nowVisible = wrap.classList.contains("collapsed");
+      setTimerVisible(nowVisible);
+      saveTimerVisible(nowVisible);
+    });
+
+    document.getElementById("open-revision-due-icon-btn").addEventListener("click", openRevisionDueDashboard);
+    document.getElementById("open-revision-backlog-icon-btn").addEventListener("click", openRevisionBacklogDashboard);
+  }
+
+  // ---------- Background color picker ----------
+  const BG_COLOR_KEY = "rounds_bg_color_v1";
+
+  const BG_COLOR_PRESETS = [
+    { id: "red", hex: "#ff3b30" },
+    { id: "blue", hex: "#0a7cff" },
+    { id: "green", hex: "#1fb60f" },
+    { id: "pink", hex: "#ff6f91" },
+    { id: "purple", hex: "#dcb3fa" },
+    { id: "gold", hex: "#f7cf6e" },
+    { id: "salmon", hex: "#ff8072" },
+    { id: "skyblue", hex: "#a6d8fb" },
+    { id: "black", hex: "#1c1c1a" },
+    { id: "magenta", hex: "#9c2ea0" },
+    { id: "grey", hex: "#dcdcda" },
+    { id: "default", hex: null }, // restores the original cream background
+  ];
+
+  const BG_COLOR_DEFAULT = "#f6f3ec";
+
+  function applyBgColor(hex) {
+    const root = document.documentElement;
+    const value = hex || BG_COLOR_DEFAULT;
+    root.style.setProperty("--bg-page", value);
+
+    // Setting background-color directly (not just the --bg-page custom
+    // property) guarantees a smooth animated fade in every browser, since
+    // custom-property changes alone aren't reliably interpolated without
+    // @property support — this is the real fix, not just the CSS transition.
+    document.body.style.backgroundColor = value;
+    const headerEl = document.querySelector("header");
+    if (headerEl) headerEl.style.backgroundColor = value;
+
+    // Pick readable text on very dark background choices (e.g. black).
+    const rgb = hexToRgb(value);
+    const luminance = (0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b) / 255;
+    document.body.style.color = luminance < 0.4 ? "#f3f1ea" : "#1c1c1a";
+
+    const dot = document.getElementById("bg-color-dot");
+    if (dot) dot.style.background = value;
+
+    const metaTheme = document.querySelector('meta[name="theme-color"]');
+    if (metaTheme) metaTheme.setAttribute("content", value);
+  }
+
+  function loadBgColor() {
+    try {
+      return localStorage.getItem(BG_COLOR_KEY); // null if never set
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function saveBgColor(hex) {
+    try {
+      if (hex) localStorage.setItem(BG_COLOR_KEY, hex);
+      else localStorage.removeItem(BG_COLOR_KEY);
+    } catch (e) {
+      console.error("Failed to save background color", e);
+    }
+  }
+
+  function renderBgColorSwatchGrid(selectedHex) {
+    const grid = document.getElementById("bg-color-swatch-grid");
+    grid.innerHTML = "";
+
+    BG_COLOR_PRESETS.forEach((preset) => {
+      const btn = document.createElement("button");
+      btn.className = "color-swatch-option";
+      btn.title = preset.id === "default" ? "Default" : preset.id;
+      btn.style.background = preset.hex || BG_COLOR_DEFAULT;
+      btn.style.color = preset.hex || "#8a8b8d";
+      if (preset.hex === selectedHex || (preset.hex === null && !selectedHex)) {
+        btn.classList.add("selected");
+      }
+      btn.addEventListener("click", () => {
+        applyBgColor(preset.hex);
+        saveBgColor(preset.hex);
+        renderBgColorSwatchGrid(preset.hex);
+      });
+      grid.appendChild(btn);
+    });
+
+    // Custom color swatch ("+") using the native color input
+    const customBtn = document.createElement("button");
+    customBtn.className = "color-swatch-option custom-swatch";
+    customBtn.title = "Custom color";
+    customBtn.textContent = "+";
+    const customInput = document.createElement("input");
+    customInput.type = "color";
+    customInput.value = selectedHex || BG_COLOR_DEFAULT;
+    customInput.addEventListener("input", (e) => {
+      applyBgColor(e.target.value);
+      saveBgColor(e.target.value);
+      renderBgColorSwatchGrid(e.target.value);
+    });
+    customBtn.appendChild(customInput);
+    grid.appendChild(customBtn);
+  }
+
+  function initBgColorPicker() {
+    const saved = loadBgColor();
+    applyBgColor(saved);
+    renderBgColorSwatchGrid(saved);
+  }
+
+  // ---------- Tile color picker ----------
+  const TILE_COLOR_KEY = "rounds_tile_color_v1";
+
+  const TILE_COLOR_PRESETS = [
+    { id: "red", hex: "#ff3b30" },
+    { id: "blue", hex: "#0a7cff" },
+    { id: "green", hex: "#1fb60f" },
+    { id: "pink", hex: "#ff6f91" },
+    { id: "purple", hex: "#dcb3fa" },
+    { id: "gold", hex: "#f7cf6e" },
+    { id: "salmon", hex: "#ff8072" },
+    { id: "skyblue", hex: "#a6d8fb" },
+    { id: "black", hex: "#1c1c1a" },
+    { id: "magenta", hex: "#9c2ea0" },
+    { id: "grey", hex: "#dcdcda" },
+    { id: "default", hex: null }, // restores the original metallic grey
+  ];
+
+  function hexToRgb(hex) {
+    const m = hex.replace("#", "");
+    return {
+      r: parseInt(m.substring(0, 2), 16),
+      g: parseInt(m.substring(2, 4), 16),
+      b: parseInt(m.substring(4, 6), 16),
+    };
+  }
+
+  function rgbToHex(r, g, b) {
+    const c = (n) => Math.max(0, Math.min(255, Math.round(n))).toString(16).padStart(2, "0");
+    return `#${c(r)}${c(g)}${c(b)}`;
+  }
+
+  function mix(hex, targetHex, amount) {
+    const a = hexToRgb(hex);
+    const b = hexToRgb(targetHex);
+    return rgbToHex(
+      a.r + (b.r - a.r) * amount,
+      a.g + (b.g - a.g) * amount,
+      a.b + (b.b - a.b) * amount
+    );
+  }
+
+  // Build a 6-stop metallic gradient plus supporting shades from one base hex,
+  // the same way the original grey tile derived its gradient/border/edge tones.
+  function buildTilePalette(baseHex) {
+    const white = "#ffffff";
+    const black = "#000000";
+    return {
+      c1: mix(baseHex, white, 0.72),
+      c2: mix(baseHex, white, 0.42),
+      c3: baseHex,
+      c4: mix(baseHex, black, 0.18),
+      c5: mix(baseHex, white, 0.28),
+      c6: mix(baseHex, white, 0.62),
+      border: mix(baseHex, black, 0.32),
+      edge: mix(baseHex, black, 0.42),
+      text: mix(baseHex, black, 0.78),
+      textSoft: mix(baseHex, black, 0.65),
+      outline: mix(baseHex, black, 0.6),
+    };
+  }
+
+  function applyTileColor(hex) {
+    const root = document.documentElement;
+    if (!hex) {
+      // restore default metallic grey (remove overrides)
+      [
+        "--tile-c1", "--tile-c2", "--tile-c3", "--tile-c4", "--tile-c5", "--tile-c6",
+        "--tile-border", "--tile-edge", "--tile-text", "--tile-text-soft", "--tile-outline",
+      ].forEach((prop) => root.style.removeProperty(prop));
+      document.getElementById("tile-color-dot").style.background =
+        "linear-gradient(155deg, #f4f4f2 0%, #dcdcda 22%, #b8b9bb 48%, #96979a 62%, #c2c3c5 78%, #e8e8e7 100%)";
+      return;
+    }
+
+    const p = buildTilePalette(hex);
+    root.style.setProperty("--tile-c1", p.c1);
+    root.style.setProperty("--tile-c2", p.c2);
+    root.style.setProperty("--tile-c3", p.c3);
+    root.style.setProperty("--tile-c4", p.c4);
+    root.style.setProperty("--tile-c5", p.c5);
+    root.style.setProperty("--tile-c6", p.c6);
+    root.style.setProperty("--tile-border", p.border);
+    root.style.setProperty("--tile-edge", p.edge);
+    root.style.setProperty("--tile-text", p.text);
+    root.style.setProperty("--tile-text-soft", p.textSoft);
+    root.style.setProperty("--tile-outline", p.outline);
+
+    const dot = document.getElementById("tile-color-dot");
+    if (dot) dot.style.background = `linear-gradient(155deg, ${p.c1} 0%, ${p.c2} 22%, ${p.c3} 48%, ${p.c4} 62%, ${p.c5} 78%, ${p.c6} 100%)`;
+  }
+
+  function loadTileColor() {
+    try {
+      return localStorage.getItem(TILE_COLOR_KEY); // null if never set
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function saveTileColor(hex) {
+    try {
+      if (hex) localStorage.setItem(TILE_COLOR_KEY, hex);
+      else localStorage.removeItem(TILE_COLOR_KEY);
+    } catch (e) {
+      console.error("Failed to save tile color", e);
+    }
+  }
+
+  function renderColorSwatchGrid(selectedHex) {
+    const grid = document.getElementById("color-swatch-grid");
+    grid.innerHTML = "";
+
+    TILE_COLOR_PRESETS.forEach((preset) => {
+      const btn = document.createElement("button");
+      btn.className = "color-swatch-option";
+      btn.title = preset.id === "default" ? "Default" : preset.id;
+      btn.style.background = preset.hex || "linear-gradient(155deg, #f4f4f2 0%, #b8b9bb 60%, #e8e8e7 100%)";
+      btn.style.color = preset.hex || "#8a8b8d";
+      if (preset.hex === selectedHex || (preset.hex === null && !selectedHex)) {
+        btn.classList.add("selected");
+      }
+      btn.addEventListener("click", () => {
+        applyTileColor(preset.hex);
+        saveTileColor(preset.hex);
+        renderColorSwatchGrid(preset.hex);
+      });
+      grid.appendChild(btn);
+    });
+
+    // Custom color swatch ("+") using the native color input
+    const customBtn = document.createElement("button");
+    customBtn.className = "color-swatch-option custom-swatch";
+    customBtn.title = "Custom color";
+    customBtn.textContent = "+";
+    const customInput = document.createElement("input");
+    customInput.type = "color";
+    customInput.value = selectedHex || "#b8b9bb";
+    customInput.addEventListener("input", (e) => {
+      applyTileColor(e.target.value);
+      saveTileColor(e.target.value);
+      renderColorSwatchGrid(e.target.value);
+    });
+    customBtn.appendChild(customInput);
+    grid.appendChild(customBtn);
+  }
+
+  function initTileColorPicker() {
+    const saved = loadTileColor();
+    applyTileColor(saved);
+    renderColorSwatchGrid(saved);
+  }
+
+  // ---------- Merged color menu (opens Tile color / Background color) ----------
+  function initSettingsMenu() {
+    const menuBtn = document.getElementById("settings-menu-btn");
+    const menuPopover = document.getElementById("settings-menu-popover");
+    const tilePopover = document.getElementById("color-picker-popover");
+    const bgPopover = document.getElementById("bg-color-popover");
+    const profilePopover = document.getElementById("profile-popover");
+    const backupPopover = document.getElementById("backup-popover");
+
+    const allPopovers = [menuPopover, tilePopover, bgPopover, profilePopover, backupPopover];
+
+    function closeAll() {
+      allPopovers.forEach((p) => p.classList.remove("visible"));
+      menuBtn.setAttribute("aria-expanded", "false");
+    }
+
+    function openOnly(popover) {
+      allPopovers.forEach((p) => p.classList.toggle("visible", p === popover));
+      menuBtn.setAttribute("aria-expanded", "true");
+    }
+
+    menuBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const isAnyOpen = allPopovers.some((p) => p.classList.contains("visible"));
+      if (isAnyOpen) {
+        closeAll();
+      } else {
+        openOnly(menuPopover);
+      }
+    });
+
+    document.getElementById("open-tile-color-btn").addEventListener("click", (e) => {
+      e.stopPropagation();
+      openOnly(tilePopover);
+    });
+
+    document.getElementById("open-bg-color-btn").addEventListener("click", (e) => {
+      e.stopPropagation();
+      openOnly(bgPopover);
+    });
+
+    document.getElementById("open-profile-panel-btn").addEventListener("click", (e) => {
+      e.stopPropagation();
+      openOnly(profilePopover);
+      const nameInput = document.getElementById("profile-name-input");
+      if (nameInput) nameInput.focus();
+    });
+
+    document.getElementById("open-backup-panel-btn").addEventListener("click", (e) => {
+      e.stopPropagation();
+      openOnly(backupPopover);
+    });
+
+    document.getElementById("tile-color-back-btn").addEventListener("click", (e) => {
+      e.stopPropagation();
+      openOnly(menuPopover);
+    });
+
+    document.getElementById("bg-color-back-btn").addEventListener("click", (e) => {
+      e.stopPropagation();
+      openOnly(menuPopover);
+    });
+
+    document.getElementById("profile-back-btn").addEventListener("click", (e) => {
+      e.stopPropagation();
+      openOnly(menuPopover);
+    });
+
+    document.getElementById("backup-back-btn").addEventListener("click", (e) => {
+      e.stopPropagation();
+      openOnly(menuPopover);
+    });
+
+    document.addEventListener("click", (e) => {
+      const wrap = menuBtn.closest(".color-picker-wrap");
+      if (!wrap.contains(e.target)) {
+        closeAll();
+      }
+    });
+  }
+
+  // ---------- Personal information ----------
+  const PROFILE_INFO_KEY = "rounds_profile_info_v1";
+
+  function loadProfileInfo() {
+    try {
+      const raw = localStorage.getItem(PROFILE_INFO_KEY);
+      return raw ? JSON.parse(raw) : { name: "", work: "", phone: "", email: "" };
+    } catch (e) {
+      console.error("Failed to load profile info", e);
+      return { name: "", work: "", phone: "", email: "" };
+    }
+  }
+
+  function saveProfileInfo(info) {
+    try {
+      localStorage.setItem(PROFILE_INFO_KEY, JSON.stringify(info));
+      return true;
+    } catch (e) {
+      console.error("Failed to save profile info", e);
+      return false;
+    }
+  }
+
+  function updateOwnerBadge(info) {
+    const badge = document.getElementById("owner-name-badge");
+    const textEl = document.getElementById("owner-name-text");
+    const avatarEl = document.getElementById("owner-name-avatar");
+    const name = (info.name || "").trim();
+
+    if (!name) {
+      badge.classList.remove("visible");
+      return;
+    }
+
+    textEl.textContent = name;
+    avatarEl.textContent = name.charAt(0).toUpperCase();
+    badge.classList.add("visible");
+  }
+
+  function initProfileInfo() {
+    const info = loadProfileInfo();
+
+    const nameInput = document.getElementById("profile-name-input");
+    const workInput = document.getElementById("profile-work-input");
+    const phoneInput = document.getElementById("profile-phone-input");
+    const emailInput = document.getElementById("profile-email-input");
+
+    nameInput.value = info.name || "";
+    workInput.value = info.work || "";
+    phoneInput.value = info.phone || "";
+    emailInput.value = info.email || "";
+
+    updateOwnerBadge(info);
+
+    const fields = [
+      { el: nameInput, key: "name" },
+      { el: workInput, key: "work" },
+      { el: phoneInput, key: "phone" },
+      { el: emailInput, key: "email" },
+    ];
+
+    fields.forEach(({ el, key }) => {
+      el.addEventListener("input", () => {
+        info[key] = el.value;
+        saveProfileInfo(info);
+        if (key === "name") updateOwnerBadge(info);
+      });
+    });
+  }
+
+  // ---------- Editable header labels (dashboard title + exam names) ----------
+  const HEADER_LABELS_KEY = "rounds_header_labels_v1";
+
+  function loadHeaderLabels() {
+    try {
+      const raw = localStorage.getItem(HEADER_LABELS_KEY);
+      return raw ? JSON.parse(raw) : {};
+    } catch (e) {
+      console.error("Failed to load header labels", e);
+      return {};
+    }
+  }
+
+  function saveHeaderLabels(labels) {
+    try {
+      localStorage.setItem(HEADER_LABELS_KEY, JSON.stringify(labels));
+    } catch (e) {
+      console.error("Failed to save header labels", e);
+    }
+  }
+
+  // Makes a contenteditable span toggle into edit mode when its adjacent
+  // pencil button is clicked, and saves on blur or Enter. Falls back to a
+  // default label if the field is ever left empty.
+  function makeTextEditable(elId, storageKey, defaultText, labels) {
+    const el = document.getElementById(elId);
+    if (!el) return;
+
+    el.textContent = labels[storageKey] || defaultText;
+
+    function commit() {
+      el.contentEditable = "false";
+      const val = el.textContent.trim();
+      if (!val) {
+        el.textContent = defaultText;
+        delete labels[storageKey];
+      } else {
+        el.textContent = val;
+        labels[storageKey] = val;
+      }
+      saveHeaderLabels(labels);
+    }
+
+    el.addEventListener("blur", commit);
+    el.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        el.blur();
+      } else if (e.key === "Escape") {
+        el.textContent = labels[storageKey] || defaultText;
+        el.blur();
+      }
+    });
+
+    return el;
+  }
+
+  function initEditableHeaderLabels() {
+    const labels = loadHeaderLabels();
+
+    const titleEl = makeTextEditable("main-title-text", "title", "MBBS Dashboard", labels);
+    const exam1El = makeTextEditable("exam-name-1-text", "exam1", "INI-CET", labels);
+
+    document.getElementById("edit-title-btn").addEventListener("click", (e) => {
+      e.stopPropagation();
+      titleEl.contentEditable = "true";
+      titleEl.focus();
+      document.execCommand("selectAll", false, null);
+    });
+
+    document.getElementById("edit-exam-names-btn").addEventListener("click", (e) => {
+      e.stopPropagation();
+      exam1El.contentEditable = "true";
+      exam1El.focus();
+      document.execCommand("selectAll", false, null);
+    });
+  }
+
+  // ---------- Init ----------
+  document.getElementById("home-link").addEventListener("click", (e) => {
+    if (e.target.closest(".inline-edit-btn")) return;
+    if (e.target.closest(".editable-text[contenteditable='true']")) return;
+    goHome();
+  });
+  document.getElementById("back-btn").addEventListener("click", () => {
+    if (backAction) { backAction(); } else { goHome(); }
+  });
+
+  // Single, permanent outside-click closer for every subject tile's
+  // context menu / remove-confirm panel — registered once here rather
+  // than inside renderSubjectList(), so it never duplicates no matter
+  // how many times the subject grid re-renders.
+  document.addEventListener("click", (e) => {
+    if (e.target.closest(".tile-context-menu") || e.target.closest(".tile-confirm-remove")) return;
+    document.querySelectorAll(".tile-context-menu.visible, .tile-confirm-remove.visible").forEach(el => {
+      el.classList.remove("visible");
+      const t = el.closest(".tile");
+      if (t) t.classList.remove("menu-open");
+    });
+  });
+
+  // Same idea for every chapter row's link popover — one shared listener
+  // instead of one per row, since the chapter table can re-render often.
+  document.addEventListener("click", (e) => {
+    if (e.target.closest(".chapter-link-popover") || e.target.closest(".chapter-link-btn")) return;
+    document.querySelectorAll(".chapter-link-popover.visible").forEach(p => p.classList.remove("visible"));
+  });
+
+  initCalendarState();
+  initBgColorPicker();
+  applySubjectNameOverrides();
+  initTileColorPicker();
+  initProfileInfo();
+  initEditableHeaderLabels();
+  renderSubjectList();
+  renderCalendar();
+  initDateStrip();
+  initBackupStrip();
+  initSyncButton();
+  initSettingsMenu();
+  updateRevisionOverviewBadges();
+  document.getElementById("open-revision-due-tile").addEventListener("click", openRevisionDueDashboard);
+  document.getElementById("open-revision-backlog-tile").addEventListener("click", openRevisionBacklogDashboard);
+  initTimerWidget();
+
+  // If the page was opened via a chapter deep link (e.g. tapped from a
+  // notes app), jump straight to that chapter instead of the home view.
+  handleDeepLink();
+
+  // ---------- Service worker registration (offline support) ----------
+  // Only registers when served over http(s) — silently no-ops on file://
+  // or unsupported browsers, so this is safe to leave in even before hosting.
+  if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("./sw.js").then((reg) => {
+        reg.addEventListener("updatefound", () => {
+          const newWorker = reg.installing;
+          if (!newWorker) return;
+          newWorker.addEventListener("statechange", () => {
+            if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
+              showToast("Updated — refresh to get the latest version");
+            }
+          });
+        });
+      }).catch((err) => {
+        console.error("Service worker registration failed:", err);
+      });
+    });
+  }
+</script>
+
+</body>
+</html>
