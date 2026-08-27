@@ -323,20 +323,42 @@
   }
 
   header {
-    border-bottom: 1px solid var(--border-strong, #eaeef0);
-    padding: 24px 24px 18px;
-    padding-top: calc(24px + env(safe-area-inset-top));
-    background: var(--bg-page-header, var(--bg-page, #f4f5f7));
+    border-bottom: 1px solid var(--tile-border, #c7cbd1);
+    padding: 16px 20px 12px;
+    padding-top: calc(16px + env(safe-area-inset-top));
+    background:
+      linear-gradient(155deg, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.12) 22%, rgba(0,0,0,0.06) 48%, rgba(0,0,0,0.02) 62%, rgba(255,255,255,0.22) 78%, rgba(255,255,255,0.05) 100%),
+      var(--bg-page-header, var(--bg-page, #f4f5f7));
     position: sticky;
     top: 0;
     z-index: 20;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.6) inset,
+      0 -6px 10px rgba(20,30,35,0.1) inset,
+      0 2px 0 rgba(0,0,0,0.12),
+      0 4px 14px rgba(30,40,45,0.16);
     transition: background-color 0.35s ease;
+  }
+
+  /* Glossy highlight sweep across the top of the header, matching the
+     same metallic sheen used on the tiles, date-strip, and timer widget —
+     so the whole top section of the dashboard reads as one continuous
+     metal surface rather than flat panels sitting on a flat header. */
+  header::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 60%;
+    background: linear-gradient(180deg, rgba(255,255,255,0.45) 0%, rgba(255,255,255,0) 100%);
+    pointer-events: none;
+    z-index: 0;
   }
 
   .header-inner {
     max-width: 1100px;
     margin: 0 auto;
     position: relative;
+    z-index: 1;
   }
 
   .owner-name-badge {
@@ -395,7 +417,7 @@
   h1 {
     font-family: 'Fraunces', serif;
     font-weight: 600;
-    font-size: clamp(24px, 4vw, 36px);
+    font-size: clamp(20px, 3.4vw, 30px);
     letter-spacing: -0.01em;
     margin: 0;
     cursor: pointer;
@@ -405,11 +427,11 @@
   h1 .dot { color: var(--accent-green, #1f7a4d); }
 
   .eyebrow {
-    font-size: 12px;
+    font-size: 11px;
     letter-spacing: 0.08em;
     text-transform: uppercase;
     opacity: 0.65;
-    margin-top: 4px;
+    margin-top: 3px;
   }
 
   .creator-credit {
@@ -477,14 +499,14 @@
     align-items: center;
     justify-content: space-between;
     flex-wrap: wrap;
-    gap: 14px;
+    gap: 10px;
     width: 25%;
     min-width: 280px;
-    margin: 0 0 16px;
+    margin: 0 0 10px;
     background: linear-gradient(155deg, #2d9663 0%, #1f7a4d 22%, #14532e 55%, #1a6640 78%, #238a58 100%);
     border: 1px solid #0f3d22;
-    border-radius: 18px;
-    padding: 14px 18px;
+    border-radius: 16px;
+    padding: 10px 14px;
     position: relative;
     overflow: hidden;
     box-shadow:
@@ -514,18 +536,18 @@
   .timer-left {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 2px;
     background: rgba(0,0,0,0.18);
     border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 10px;
-    padding: 6px 10px;
+    border-radius: 8px;
+    padding: 4px 8px;
     box-shadow: 0 1px 3px rgba(0,0,0,0.35) inset;
     position: relative;
     z-index: 1;
   }
 
   .timer-label {
-    font-size: 9px;
+    font-size: 8px;
     letter-spacing: 0.1em;
     text-transform: uppercase;
     color: rgba(255,255,255,0.7);
@@ -533,7 +555,7 @@
 
   .timer-display {
     font-family: 'IBM Plex Mono', monospace;
-    font-size: clamp(18px, 3.2vw, 26px);
+    font-size: clamp(16px, 2.8vw, 22px);
     font-weight: 700;
     color: #ffffff;
     letter-spacing: 0.01em;
@@ -566,10 +588,10 @@
     background: linear-gradient(155deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.1) 100%);
     color: #ffffff;
     border: 1px solid rgba(255,255,255,0.3);
-    border-radius: 10px;
-    padding: 7px 11px;
+    border-radius: 8px;
+    padding: 5px 9px;
     font: inherit;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 600;
     cursor: pointer;
     box-shadow:
@@ -692,15 +714,17 @@
 
   .date-strip {
     display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: nowrap;
-    margin-top: 14px;
-    padding: 16px 18px;
+    flex-direction: column;
+    gap: 7px;
+    width: 25%;
+    min-width: 280px;
+    margin: 0;
     background: linear-gradient(155deg, #fbfbfc 0%, #f0f1f3 22%, #e2e4e7 48%, #d3d6da 62%, #e6e8eb 78%, #f6f7f8 100%);
     border: 1px solid var(--tile-border, #c7cbd1);
-    border-radius: 18px;
+    border-radius: 16px;
+    padding: 9px 12px;
     position: relative;
+    overflow: hidden;
     box-shadow:
       0 1px 0 rgba(255,255,255,0.8) inset,
       0 -5px 8px rgba(20,30,35,0.06) inset,
@@ -709,7 +733,9 @@
   }
 
   /* Glossy highlight overlay, matching the same metallic treatment as
-     the subject tiles, so the two visually read as the same material. */
+     the subject tiles and timer widget, so the date-strip reads as the
+     same material even though its own content needs more vertical room
+     than the timer's single-row layout. */
   .date-strip::before {
     content: "";
     position: absolute;
@@ -718,7 +744,6 @@
     border-radius: 18px 18px 60% 60% / 18px 18px 100% 100%;
     background: linear-gradient(180deg, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0) 100%);
     pointer-events: none;
-    display: block;
   }
 
   .date-strip::after {
@@ -729,28 +754,147 @@
     display: none;
   }
 
-  /* Every cell shares the panel's width equally and is allowed to shrink
-     — this keeps all four (Today / Calendar showing / Exam date / Days
-     remaining) genuinely visible within the panel's own boundary on one
-     line, instead of the last cell getting pushed off the edge. */
-  .date-block {
+  /* ---------- Week-strip header: "Sat, 16 2025 ... JUL" ---------- */
+
+  .week-strip-header {
     display: flex;
-    flex-direction: column;
-    gap: 4px;
-    background: rgba(255,255,255,0.55);
-    border: 1px solid rgba(20,30,35,0.08);
-    border-radius: 12px;
-    padding: 10px 12px;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
     position: relative;
     z-index: 1;
-    flex: 1 1 0;
-    min-width: 0;
-    overflow: hidden;
   }
 
-  .date-label {
-    font-size: 9px;
-    letter-spacing: 0.1em;
+  .week-strip-date {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+
+  .week-strip-dow {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--tile-text-soft, #3d4750);
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+  }
+
+  .week-strip-year {
+    font-family: 'Fraunces', serif;
+    font-weight: 600;
+    font-size: 16px;
+    color: var(--tile-text, #1a2229);
+    letter-spacing: -0.01em;
+    white-space: nowrap;
+  }
+
+  .week-strip-month {
+    font-family: 'Fraunces', serif;
+    font-weight: 700;
+    font-size: 17px;
+    letter-spacing: 0.02em;
+    color: var(--accent-green, #1f7a4d);
+    text-shadow: 0 1px 0 rgba(255,255,255,0.5);
+    white-space: nowrap;
+  }
+
+  /* ---------- Week-strip row: 7 day cells, today highlighted ---------- */
+
+  .week-strip-row {
+    display: flex;
+    gap: 3px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .week-strip-cell {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1px;
+    padding: 3px 2px;
+    border-radius: 7px;
+    background: none;
+    border: none;
+    font: inherit;
+    cursor: default;
+  }
+
+  .week-strip-cell-dow {
+    font-size: 7.5px;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--tile-text-soft, #3d4750);
+  }
+
+  .week-strip-cell-num {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--tile-text, #1a2229);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Today's cell gets its own small raised metallic pill, tinted green,
+     so it stands out from the rest of the week the same way the
+     reference design highlights the current day. */
+  .week-strip-cell.is-today {
+    cursor: pointer;
+    background: linear-gradient(155deg, #2d9663 0%, #1f7a4d 45%, #14532e 100%);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.3) inset,
+      0 -2px 4px rgba(0,0,0,0.2) inset,
+      0 1px 0 #0f3d22,
+      0 2px 5px rgba(20,83,46,0.35);
+    transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.15s ease;
+  }
+
+  .week-strip-cell.is-today:hover {
+    transform: translateY(-1px);
+  }
+
+  .week-strip-cell.is-today:active {
+    transform: translateY(1px);
+  }
+
+  .week-strip-cell.is-today .week-strip-cell-dow {
+    color: rgba(255,255,255,0.75);
+  }
+
+  .week-strip-cell.is-today .week-strip-cell-num {
+    color: #ffffff;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.25);
+  }
+
+  /* ---------- Exam date / Days remaining row ---------- */
+
+  .date-strip-stats {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: nowrap;
+    position: relative;
+    z-index: 1;
+    min-width: 0;
+  }
+
+  .date-strip-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    flex: 1 1 0;
+    min-width: 0;
+    background: rgba(20,30,35,0.05);
+    border: 1px solid rgba(20,30,35,0.08);
+    border-radius: 7px;
+    padding: 4px 7px;
+  }
+
+  .date-strip-label {
+    font-size: 8px;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--tile-text-soft, #3d4750);
     white-space: nowrap;
@@ -758,9 +902,9 @@
     text-overflow: ellipsis;
   }
 
-  .date-value {
+  .date-strip-value {
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 15px;
+    font-size: 13px;
     font-weight: 700;
     color: var(--tile-text, #1a2229);
     font-variant-numeric: tabular-nums;
@@ -772,20 +916,19 @@
 
   .exam-date-display-wrap {
     position: relative;
-    width: 100%;
     min-width: 0;
   }
 
   .exam-date-display-text {
     display: block;
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 14px;
+    font-size: 12px;
     font-weight: 700;
     color: var(--text-primary, #14251d);
-    padding: 2px 6px;
+    padding: 1px 4px;
     border: 1px solid var(--border-strong, #eaeef0);
     background: var(--bg-surface, #ffffff);
-    border-radius: 6px;
+    border-radius: 5px;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -820,46 +963,53 @@
     cursor: pointer;
   }
 
-  .countdown-block {
-    border-color: rgba(20,30,35,0.08);
-  }
-
-  .countdown-block .date-value {
+  #countdown-display {
     color: var(--accent-green, #1f7a4d);
   }
 
-  /* ---------- Mobile: compact date-strip as a 2×2 grid instead of
-     stacking 4 rows tall, plus tighter header spacing overall ---------- */
+  /* ---------- Mobile: tighter single-row spacing, plus tighter header
+     spacing overall ---------- */
   @media (max-width: 480px) {
     .date-strip {
-      display: flex;
-      flex-wrap: nowrap;
+      width: 100%;
+      min-width: 0;
       gap: 6px;
-      padding: 10px 10px;
-      margin-top: 10px;
+      padding: 8px 10px;
+      margin-bottom: 8px;
     }
 
-    .date-block {
-      padding: 6px 8px;
-      gap: 2px;
+    .week-strip-year {
+      font-size: 13px;
     }
 
-    .date-label {
-      font-size: 8px;
+    .week-strip-month {
+      font-size: 14px;
     }
 
-    .date-value {
-      font-size: 12px;
+    .week-strip-cell-dow {
+      font-size: 6.5px;
+    }
+
+    .week-strip-cell-num {
+      font-size: 10px;
+    }
+
+    .date-strip-label {
+      font-size: 7px;
+    }
+
+    .date-strip-value {
+      font-size: 11px;
     }
 
     .exam-date-display-text {
-      font-size: 12px;
-      padding: 1px 4px;
+      font-size: 10px;
+      padding: 1px 3px;
     }
 
     header {
-      padding: 14px 14px 10px;
-      padding-top: calc(14px + env(safe-area-inset-top));
+      padding: 12px 14px 8px;
+      padding-top: calc(12px + env(safe-area-inset-top));
     }
 
     .title-row {
@@ -868,11 +1018,11 @@
 
     .eyebrow {
       margin-top: 2px;
-      font-size: 11px;
+      font-size: 10px;
     }
 
-    .hub-toggle-strip {
-      margin-top: 8px;
+    .main-hub-row {
+      margin-bottom: 12px;
     }
 
     /* Tighter overall page rhythm on phones — less dead space between
@@ -920,22 +1070,6 @@
     }
   }
 
-  .countdown-block .date-value {
-    color: var(--accent-green, #1f7a4d);
-    font-weight: 700;
-  }
-
-  #today-display {
-    text-decoration: underline;
-    text-decoration-color: var(--border-strong, #eaeef0);
-    text-underline-offset: 3px;
-    transition: text-decoration-color 0.15s ease;
-  }
-
-  #today-display:hover {
-    text-decoration-color: var(--accent-green, #1f7a4d);
-  }
-
   .date-sep {
     display: none;
   }
@@ -943,7 +1077,6 @@
   /* ---------- Radial hub menu (replaces the flat icon row) ---------- */
 
   .hub-toggle-strip {
-    margin-top: 10px;
     display: flex;
     justify-content: flex-end;
   }
@@ -1577,6 +1710,15 @@
     max-width: 1100px;
     margin: 0 auto;
     padding: 28px 24px 64px;
+  }
+
+  /* Hosts the hub menu now that it's moved out of the header and sits
+     as its own persistent row at the top of main, above whichever view
+     is currently showing (subjects, a chapter, revision dashboards). */
+  .main-hub-row {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 18px;
   }
 
   /* ---------- Subject list view ---------- */
@@ -3431,31 +3573,37 @@
     <p class="subtitle" id="header-subtitle"></p>
 
     <div class="date-strip" id="date-strip">
-      <span class="scan-sweep" aria-hidden="true"></span>
-      <div class="date-block">
-        <span class="date-label">Today</span>
-        <span class="date-value" id="today-display"></span>
-      </div>
-      <div class="date-sep"></div>
-      <div class="date-block">
-        <span class="date-label">Calendar showing</span>
-        <span class="date-value" id="calendar-sync-display"></span>
-      </div>
-      <div class="date-sep"></div>
-      <div class="date-block">
-        <span class="date-label">Exam date</span>
-        <div class="exam-date-display-wrap">
-          <span class="exam-date-display-text" id="exam-date-display-text">Not set</span>
-          <input type="date" class="exam-date-input" id="exam-date-input" />
+      <div class="week-strip-header">
+        <div class="week-strip-date">
+          <span class="week-strip-dow" id="week-strip-dow"></span>
+          <span class="week-strip-year" id="week-strip-year"></span>
         </div>
+        <span class="week-strip-month" id="week-strip-month"></span>
       </div>
-      <div class="date-sep"></div>
-      <div class="date-block countdown-block">
-        <span class="date-label">Days remaining</span>
-        <span class="date-value" id="countdown-display">—</span>
+      <div class="week-strip-row" id="week-strip-row"></div>
+      <div class="date-strip-stats">
+        <div class="date-strip-stat">
+          <span class="date-strip-label">Exam date</span>
+          <div class="exam-date-display-wrap">
+            <span class="exam-date-display-text" id="exam-date-display-text">Not set</span>
+            <input type="date" class="exam-date-input" id="exam-date-input" />
+          </div>
+        </div>
+        <div class="date-strip-stat">
+          <span class="date-strip-label">Days remaining</span>
+          <span class="date-strip-value" id="countdown-display">—</span>
+        </div>
       </div>
     </div>
 
+    <div class="breadcrumb" id="breadcrumb">
+      <button class="back-btn" id="back-btn">&larr; back</button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="main-hub-row">
     <div class="hub-toggle-strip" id="hub-toggle-strip">
       <div class="hub-wrap" id="hub-wrap">
         <button class="hub-btn" id="hub-toggle-btn" title="Open quick actions" aria-label="Open quick actions" aria-expanded="false">
@@ -3682,14 +3830,8 @@
         </div>
       </div>
     </div>
-
-    <div class="breadcrumb" id="breadcrumb">
-      <button class="back-btn" id="back-btn">&larr; back</button>
-    </div>
   </div>
-</header>
 
-<main>
   <div id="view-subjects">
     <div id="subject-grid-container"></div>
 
@@ -4370,6 +4512,7 @@
 
   const MONTH_NAMES = ["January","February","March","April","May","June","July","August","September","October","November","December"];
   const DOW_NAMES = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+  const DOW_FULL_NAMES = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
 
   // ---------- View switching ----------
   let backAction = null; // function to call on back button; null = goHome
@@ -5686,10 +5829,6 @@
 
     document.getElementById("cal-month-label").textContent = `${MONTH_NAMES[calViewMonth]} ${calViewYear}`;
 
-    // Keep the header date-strip in sync with whatever month the calendar is showing
-    const syncEl = document.getElementById("calendar-sync-display");
-    if (syncEl) syncEl.textContent = `${MONTH_NAMES[calViewMonth]} ${calViewYear}`;
-
     const weeksContainer = document.getElementById("cal-weeks");
     weeksContainer.innerHTML = "";
 
@@ -6044,7 +6183,7 @@
   }
 
   function initDateStrip() {
-    document.getElementById("today-display").textContent = formatDateShort(todayISO());
+    renderWeekStrip();
 
     const examInput = document.getElementById("exam-date-input");
     const saved = loadExamDate();
@@ -6071,15 +6210,44 @@
     });
 
     updateCountdown();
+  }
 
-    // clicking "Today" jumps the calendar below to the current month
-    const todayEl = document.getElementById("today-display");
-    todayEl.style.cursor = "pointer";
-    todayEl.title = "Jump calendar to this month";
-    todayEl.addEventListener("click", () => {
-      initCalendarState();
-      renderCalendar();
-    });
+  // Builds the "Sat, 16 2025 ... JUL" header line, plus the row of 7 day
+  // cells centered on today with today's own cell highlighted — driven
+  // entirely by real Date math, so it's always correct regardless of
+  // what day the app happens to be opened on. Clicking today's cell
+  // jumps the calendar below to the current month.
+  function renderWeekStrip() {
+    const today = new Date();
+
+    document.getElementById("week-strip-dow").textContent = DOW_FULL_NAMES[today.getDay()] + ",";
+    document.getElementById("week-strip-year").textContent = `${today.getDate()} ${today.getFullYear()}`;
+    document.getElementById("week-strip-month").textContent = MONTH_NAMES[today.getMonth()].slice(0, 3).toUpperCase();
+
+    const row = document.getElementById("week-strip-row");
+    row.innerHTML = "";
+
+    // Center the strip on today: 3 days before, today, 3 days after.
+    for (let offset = -3; offset <= 3; offset++) {
+      const d = new Date(today);
+      d.setDate(today.getDate() + offset);
+      const isToday = offset === 0;
+
+      const cell = document.createElement(isToday ? "button" : "div");
+      cell.className = "week-strip-cell" + (isToday ? " is-today" : "");
+      cell.innerHTML = `
+        <span class="week-strip-cell-dow">${DOW_NAMES[d.getDay()]}</span>
+        <span class="week-strip-cell-num">${d.getDate()}</span>
+      `;
+      if (isToday) {
+        cell.title = "Jump calendar to this month";
+        cell.addEventListener("click", () => {
+          initCalendarState();
+          renderCalendar();
+        });
+      }
+      row.appendChild(cell);
+    }
   }
 
   // ---------- Device identity (for cross-device sync labeling) ----------
