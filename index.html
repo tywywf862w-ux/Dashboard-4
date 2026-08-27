@@ -1281,6 +1281,29 @@
     opacity: 0.85;
   }
 
+  .sync-provenance-status {
+    font-size: 10px;
+    opacity: 0.6;
+    margin: 0 0 4px;
+    padding: 0 8px;
+    line-height: 1.4;
+    word-break: break-word;
+    color: #3d5a80;
+  }
+
+  .sync-provenance-status:empty {
+    display: none;
+  }
+
+  .device-name-note {
+    font-size: 9.5px;
+    opacity: 0.45;
+    margin: 0 0 4px;
+    padding: 0 8px;
+    line-height: 1.4;
+    font-style: italic;
+  }
+
   .backup-divider {
     height: 1px;
     background: rgba(28,28,26,0.1);
@@ -3406,6 +3429,8 @@
               <span>Sync now</span>
             </button>
             <p class="backup-sync-status" id="backup-sync-status">Not synced yet</p>
+            <p class="sync-provenance-status" id="sync-provenance-status"></p>
+            <p class="device-name-note" id="device-name-note"></p>
 
             <div class="backup-divider"></div>
 
@@ -5693,6 +5718,66 @@
     });
   }
 
+  // ---------- Device identity (for cross-device sync labeling) ----------
+  // Guesses a friendly device name from the browser's own user-agent
+  // string, generated once and stored locally so it stays stable on this
+  // device across sessions. This is a client-side guess, not something
+  // Apple/Google hand apps directly — it won't match a device's actual
+  // given name (like "Sushant's iPhone"), just its general type.
+  const DEVICE_NAME_KEY = "rounds_device_name_v1";
+
+  function guessDeviceName() {
+    const ua = navigator.userAgent || "";
+    const platform = navigator.platform || "";
+
+    if (/iPad/.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1)) return "iPad";
+    if (/iPhone/.test(ua)) return "iPhone";
+    if (/Android/.test(ua)) {
+      return /Mobile/.test(ua) ? "Android phone" : "Android tablet";
+    }
+    if (/Macintosh|Mac OS X/.test(ua)) return "Mac";
+    if (/Windows/.test(ua)) return "Windows PC";
+    if (/Linux/.test(ua)) return "Linux PC";
+    return "This device";
+  }
+
+  function getDeviceName() {
+    try {
+      let name = localStorage.getItem(DEVICE_NAME_KEY);
+      if (!name) {
+        name = guessDeviceName();
+        localStorage.setItem(DEVICE_NAME_KEY, name);
+      }
+      return name;
+    } catch (e) {
+      return guessDeviceName();
+    }
+  }
+
+  // ---------- Last-sync provenance ----------
+  // Separate from BACKUP_LAST_KEY (which only tracks this device's own
+  // last export/sync time) — this tracks the most recent sync file this
+  // device has actually IMPORTED, and who it came from, so "Last synced
+  // from iPhone · 2 hours ago" can be shown honestly after an import.
+  const SYNC_PROVENANCE_KEY = "rounds_sync_provenance_v1";
+
+  function saveSyncProvenance(deviceName, timestamp) {
+    try {
+      localStorage.setItem(SYNC_PROVENANCE_KEY, JSON.stringify({ deviceName, timestamp }));
+    } catch (e) {
+      console.error("Failed to save sync provenance", e);
+    }
+  }
+
+  function loadSyncProvenance() {
+    try {
+      const raw = localStorage.getItem(SYNC_PROVENANCE_KEY);
+      return raw ? JSON.parse(raw) : null;
+    } catch (e) {
+      return null;
+    }
+  }
+
   // ---------- Backup: export / import all app data as one JSON file ----------
   const BACKUP_LAST_KEY = "rounds_backup_last_v1";
   const BACKUP_FORMAT_VERSION = 1;
@@ -5727,6 +5812,7 @@
       app: "MBBS Dashboard",
       formatVersion: BACKUP_FORMAT_VERSION,
       exportedAt: new Date().toISOString(),
+      syncedFrom: getDeviceName(),
       data,
     };
   }
@@ -5870,6 +5956,16 @@
 
       restoreBackupPayload(parsed);
       reloadAllStateFromStorage();
+
+      // Record where this imported data actually came from, so this
+      // device can honestly show "Last synced from iPhone · [time]"
+      // afterward — using the source device's own claimed name and
+      // export timestamp, not this device's.
+      const sourceDevice = parsed.syncedFrom || "another device";
+      const sourceTimestamp = parsed.exportedAt || new Date().toISOString();
+      saveSyncProvenance(sourceDevice, sourceTimestamp);
+      renderSyncProvenanceDisplay();
+
       showToast("Backup restored");
     };
     reader.onerror = () => showToast("Couldn't read that file");
@@ -5970,6 +6066,51 @@
     el.classList.add("synced");
   }
 
+  // "2 hours ago" / "3 days ago" style relative time — more honest for
+  // provenance display than an absolute date, since what matters here is
+  // roughly how stale the cross-device data is.
+  function formatRelativeTime(isoString) {
+    const then = new Date(isoString);
+    if (isNaN(then.getTime())) return "";
+    const diffMs = Date.now() - then.getTime();
+    const diffMin = Math.round(diffMs / 60000);
+
+    if (diffMin < 1) return "Just now";
+    if (diffMin < 60) return `${diffMin} minute${diffMin === 1 ? "" : "s"} ago`;
+    const diffHr = Math.round(diffMin / 60);
+    if (diffHr < 24) return `${diffHr} hour${diffHr === 1 ? "" : "s"} ago`;
+    const diffDay = Math.round(diffHr / 24);
+    if (diffDay < 30) return `${diffDay} day${diffDay === 1 ? "" : "s"} ago`;
+    const dow = DOW_NAMES[then.getDay()];
+    const month = MONTH_NAMES[then.getMonth()];
+    return `${dow}, ${month} ${then.getDate()}`;
+  }
+
+  // Shows where the most recently IMPORTED sync file came from — separate
+  // from renderSyncStatus() above, which only tracks this device's own
+  // outgoing exports. This is the honest cross-device signal: it only
+  // updates when a file from another device is actually brought over and
+  // imported here, never in real time.
+  function renderSyncProvenanceDisplay() {
+    const el = document.getElementById("sync-provenance-status");
+    if (!el) return;
+    const provenance = loadSyncProvenance();
+
+    if (!provenance) {
+      el.textContent = "";
+      return;
+    }
+
+    const relative = formatRelativeTime(provenance.timestamp);
+    el.textContent = `Last synced from ${provenance.deviceName} · ${relative}`;
+  }
+
+  function renderDeviceNameNote() {
+    const el = document.getElementById("device-name-note");
+    if (!el) return;
+    el.textContent = `This device is labeled "${getDeviceName()}" in sync files.`;
+  }
+
   async function syncBackupNow() {
     const payload = buildBackupPayload();
     const jsonText = JSON.stringify(payload, null, 2);
@@ -6016,6 +6157,8 @@
 
   function initSyncButton() {
     renderSyncStatus();
+    renderSyncProvenanceDisplay();
+    renderDeviceNameNote();
     document.getElementById("sync-backup-btn").addEventListener("click", () => {
       syncBackupNow();
     });
@@ -6562,6 +6705,8 @@
     document.getElementById("open-backup-panel-btn").addEventListener("click", (e) => {
       e.stopPropagation();
       openOnly(backupPopover);
+      renderSyncProvenanceDisplay();
+      renderDeviceNameNote();
     });
 
     document.getElementById("open-app-lock-panel-btn").addEventListener("click", (e) => {
