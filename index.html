@@ -1459,6 +1459,204 @@
     font-size: 11px;
   }
 
+  /* ---------- "+ Add section" popover (header toolbar icon) ---------- */
+
+  .add-section-popover {
+    display: none;
+    flex-direction: column;
+    gap: 8px;
+    width: 220px;
+  }
+
+  .add-section-popover.visible {
+    display: flex;
+  }
+
+  .add-section-popover-label {
+    font-size: 10px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    opacity: 0.55;
+  }
+
+  .add-section-input {
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    border: 1px solid rgba(28,28,26,0.3);
+    border-radius: 4px;
+    padding: 8px 10px;
+    background: #fffdf8;
+    color: #1c1c1a;
+  }
+
+  .add-section-input:focus {
+    outline: none;
+    border-color: #1c1c1a;
+  }
+
+  .add-section-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+
+  .add-section-confirm,
+  .add-section-cancel {
+    font: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    border: none;
+    border-radius: 5px;
+    padding: 7px 12px;
+    cursor: pointer;
+    transition: filter 0.12s ease, transform 0.1s ease;
+  }
+
+  .add-section-confirm {
+    background: #1c1c1a;
+    color: #f6f3ec;
+  }
+
+  .add-section-cancel {
+    background: rgba(28,28,26,0.08);
+    color: #1c1c1a;
+  }
+
+  .add-section-confirm:hover,
+  .add-section-cancel:hover {
+    filter: brightness(1.1);
+    transform: translateY(-1px);
+  }
+
+  .add-section-confirm:active,
+  .add-section-cancel:active {
+    transform: translateY(1px);
+  }
+
+  .add-section-divider {
+    height: 1px;
+    background: rgba(28,28,26,0.1);
+    margin: 4px 0;
+  }
+
+  .remove-section-block {
+    display: none;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .remove-section-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-height: 160px;
+    overflow-y: auto;
+  }
+
+  .remove-section-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    background: rgba(28,28,26,0.04);
+    border-radius: 5px;
+    padding: 6px 8px;
+  }
+
+  .remove-section-name {
+    font-size: 12px;
+    font-weight: 600;
+    color: #1c1c1a;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .remove-section-btn {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(139,46,63,0.1);
+    color: #8b2e3f;
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+    transition: background 0.12s ease, transform 0.1s ease;
+  }
+
+  .remove-section-btn:hover {
+    background: rgba(139,46,63,0.2);
+    transform: scale(1.1);
+  }
+
+  .remove-section-btn:active {
+    transform: scale(0.9);
+  }
+
+  .section-confirm-remove {
+    display: none;
+    flex-direction: column;
+    gap: 10px;
+    background: linear-gradient(165deg, rgba(255,255,255,0.95) 0%, rgba(251,250,247,0.9) 100%);
+    border: 1px solid rgba(139,46,63,0.3);
+    border-radius: 10px;
+    padding: 12px;
+    margin-top: 4px;
+  }
+
+  .section-confirm-remove.visible {
+    display: flex;
+  }
+
+  .section-confirm-text {
+    font-size: 12px;
+    line-height: 1.4;
+    color: #1c1c1a;
+    margin: 0;
+  }
+
+  .section-confirm-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+
+  .section-confirm-cancel,
+  .section-confirm-delete {
+    font: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    border: none;
+    border-radius: 6px;
+    padding: 6px 12px;
+    cursor: pointer;
+    transition: filter 0.12s ease, transform 0.1s ease;
+  }
+
+  .section-confirm-cancel {
+    background: rgba(28,28,26,0.08);
+    color: #1c1c1a;
+  }
+
+  .section-confirm-delete {
+    background: #8b2e3f;
+    color: #fdf3f0;
+  }
+
+  .section-confirm-cancel:hover,
+  .section-confirm-delete:hover {
+    filter: brightness(1.1);
+    transform: translateY(-1px);
+  }
+
+  .section-confirm-cancel:active,
+  .section-confirm-delete:active {
+    transform: translateY(1px);
+  }
+
   .dot-marker {
     width: 10px;
     height: 10px;
@@ -2901,6 +3099,31 @@
 
   .toast.visible { display: flex; opacity: 1; }
 
+  .toast-undo-btn {
+    background: transparent;
+    border: 1px solid rgba(246,243,236,0.4);
+    color: #6fe0a0;
+    font: inherit;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    border-radius: 4px;
+    padding: 4px 10px;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background 0.12s ease, transform 0.1s ease;
+  }
+
+  .toast-undo-btn:hover {
+    background: rgba(111,224,160,0.12);
+    transform: translateY(-1px);
+  }
+
+  .toast-undo-btn:active {
+    transform: translateY(1px);
+  }
+
   @media (max-width: 700px) {
     .table-wrap { overflow-x: auto; }
     table { min-width: 620px; }
@@ -3189,6 +3412,37 @@
             <button class="applock-action-btn applock-remove-btn" id="applock-remove-btn" style="display:none">Remove PIN</button>
           </div>
         </div>
+
+        <div class="color-picker-wrap">
+          <button class="timer-toggle-btn shortcut-icon-btn" id="add-section-toggle-btn" title="Add a new section" aria-label="Add a new section" aria-expanded="false">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 5v14"></path>
+              <path d="M5 12h14"></path>
+            </svg>
+          </button>
+          <div class="color-picker-popover add-section-popover" id="add-section-popover">
+            <label class="add-section-popover-label">New section name</label>
+            <input type="text" class="add-section-input" id="add-section-input" placeholder="e.g. Electives" autocomplete="off" />
+            <div class="add-section-actions">
+              <button class="add-section-cancel" id="add-section-cancel-btn">Cancel</button>
+              <button class="add-section-confirm" id="add-section-confirm-btn">Create</button>
+            </div>
+
+            <div class="remove-section-block" id="remove-section-block">
+              <div class="add-section-divider"></div>
+              <label class="add-section-popover-label">Remove a section</label>
+              <div class="remove-section-list" id="remove-section-list"></div>
+            </div>
+
+            <div class="section-confirm-remove" id="section-confirm-remove">
+              <p class="section-confirm-text" id="section-confirm-text"></p>
+              <div class="section-confirm-actions">
+                <button class="section-confirm-cancel" id="section-confirm-cancel-btn">Cancel</button>
+                <button class="section-confirm-delete" id="section-confirm-delete-btn">Remove</button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -3268,6 +3522,7 @@
 
 <div class="toast" id="toast">
   <span id="toast-text"></span>
+  <button class="toast-undo-btn" id="toast-undo-btn" style="display:none">Undo</button>
 </div>
 
 <script>
@@ -3337,6 +3592,86 @@
   }
   applyRemovedBuiltinFilter();
 
+  // ---------- User-added custom sections (groups) ----------
+  // Beyond the 3 built-in sections (Pre-Clinical / Para-Clinical /
+  // Clinical), the user can add their own — e.g. "Electives" or "Extra
+  // Revision". Stored separately so the 3 defaults stay structurally
+  // stable, merged into GROUPS/GROUP_META at startup before anything
+  // else reads them (grouping, rendering, the default-label snapshot).
+  const CUSTOM_GROUPS_KEY = "rounds_custom_groups_v1";
+
+  function loadCustomGroups() {
+    try {
+      const raw = localStorage.getItem(CUSTOM_GROUPS_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) {
+      console.error("Failed to load custom groups", e);
+      return [];
+    }
+  }
+
+  function saveCustomGroups(list) {
+    try {
+      localStorage.setItem(CUSTOM_GROUPS_KEY, JSON.stringify(list));
+    } catch (e) {
+      console.error("Failed to save custom groups", e);
+    }
+  }
+
+  function mergeCustomGroups() {
+    const custom = loadCustomGroups();
+    custom.forEach(g => {
+      if (!GROUPS.includes(g.key)) {
+        GROUPS.push(g.key);
+        GROUP_META[g.key] = { tag: g.tag, tint: g.tint, custom: true };
+      }
+    });
+  }
+  mergeCustomGroups();
+
+  const GROUP_TINT_PRESETS = ["#2d6a4f", "#9c6b1f", "#8b2e3f", "#3d5a80", "#6a4c93", "#a4506c", "#4a7c59", "#7a5195"];
+
+  function addCustomGroup(label) {
+    const trimmed = (label || "").trim();
+    if (!trimmed) return null;
+    const key = "group_" + trimmed.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") + "_" + Math.random().toString(36).slice(2, 6);
+    const custom = loadCustomGroups();
+    const tint = GROUP_TINT_PRESETS[custom.length % GROUP_TINT_PRESETS.length];
+    const newGroup = { key, label: trimmed, tag: "", tint, custom: true };
+    GROUPS.push(key);
+    GROUP_META[key] = { tag: "", tint, custom: true };
+    // GROUP_DEFAULT_LABELS/TAGS are normally built once at page load from
+    // whatever's already in storage — a group created just now at runtime
+    // needs its own entry added here too, or getGroupLabel()/getGroupTag()
+    // would resolve to undefined for it until the next full page reload.
+    GROUP_DEFAULT_LABELS[key] = trimmed;
+    GROUP_DEFAULT_TAGS[key] = "";
+    custom.push(newGroup);
+    saveCustomGroups(custom);
+    return newGroup;
+  }
+
+  function isRemovableGroup(groupKey) {
+    return !!(GROUP_META[groupKey] && GROUP_META[groupKey].custom);
+  }
+
+  // Removing a section only makes sense if it's empty — otherwise its
+  // subjects would need to go somewhere. The confirm dialog in the UI
+  // explains this; this function assumes that check already passed.
+  function removeCustomGroup(groupKey) {
+    if (!isRemovableGroup(groupKey)) return;
+    const idx = GROUPS.indexOf(groupKey);
+    if (idx > -1) GROUPS.splice(idx, 1);
+    delete GROUP_META[groupKey];
+    saveCustomGroups(loadCustomGroups().filter(g => g.key !== groupKey));
+
+    const labelOverrides = loadGroupLabelOverrides();
+    if (labelOverrides[groupKey]) {
+      delete labelOverrides[groupKey];
+      saveGroupLabelOverrides(labelOverrides);
+    }
+  }
+
   // Snapshot of each group's original display name and year tag, captured
   // before any saved overrides are applied — used to restore defaults if
   // an edit is cleared back to blank. Keyed by the internal GROUPS id
@@ -3346,7 +3681,11 @@
   const GROUP_DEFAULT_LABELS = {};
   const GROUP_DEFAULT_TAGS = {};
   GROUPS.forEach(g => {
-    GROUP_DEFAULT_LABELS[g] = g;
+    // Custom groups store their own chosen label directly (there's no
+    // separate "default" to fall back to), while built-in groups use
+    // their hardcoded key as the default label, as before.
+    const customMatch = loadCustomGroups().find(c => c.key === g);
+    GROUP_DEFAULT_LABELS[g] = customMatch ? customMatch.label : g;
     GROUP_DEFAULT_TAGS[g] = GROUP_META[g].tag;
   });
 
@@ -3443,6 +3782,41 @@
 
     if (DATA[subjectId]) {
       delete DATA[subjectId];
+      saveData(DATA);
+    }
+  }
+
+  // Reverses removeSubjectEntirely using a snapshot taken beforehand (see
+  // the tile-confirm-delete handler) — restores the subject entry itself,
+  // its chapters, and its rename override, and un-marks it from whichever
+  // removal-tracking list (custom vs built-in) it had been added to.
+  function restoreRemovedSubject(snapshot) {
+    if (!snapshot) return;
+    const { subject, chapters, nameOverride, wasCustom } = snapshot;
+
+    if (!SUBJECTS.some(s => s.id === subject.id)) {
+      SUBJECTS.push(subject);
+    }
+
+    if (wasCustom) {
+      const custom = loadCustomSubjects();
+      if (!custom.some(s => s.id === subject.id)) {
+        custom.push(subject);
+        saveCustomSubjects(custom);
+      }
+    } else {
+      const removedIds = loadRemovedBuiltinIds().filter(id => id !== subject.id);
+      saveRemovedBuiltinIds(removedIds);
+    }
+
+    if (nameOverride) {
+      const nameOverrides = loadSubjectNameOverrides();
+      nameOverrides[subject.id] = nameOverride;
+      saveSubjectNameOverrides(nameOverrides);
+    }
+
+    if (chapters && chapters.length) {
+      DATA[subject.id] = chapters;
       saveData(DATA);
     }
   }
@@ -3656,10 +4030,47 @@
   function showToast(msg) {
     const toast = document.getElementById("toast");
     const text = document.getElementById("toast-text");
+    const undoBtn = document.getElementById("toast-undo-btn");
     text.textContent = msg;
+    undoBtn.style.display = "none";
     toast.classList.add("visible");
     clearTimeout(showToast._t);
     showToast._t = setTimeout(() => toast.classList.remove("visible"), 1400);
+  }
+
+  // Same toast, but with a visible "Undo" button that runs restoreFn when
+  // clicked. Used for delete actions (chapters, daily entries, subjects)
+  // so a slip of the finger isn't permanent. The window is intentionally
+  // longer than a plain confirmation toast since undoing takes a moment
+  // to notice and act on.
+  function showUndoToast(msg, restoreFn) {
+    const toast = document.getElementById("toast");
+    const text = document.getElementById("toast-text");
+    const undoBtn = document.getElementById("toast-undo-btn");
+
+    text.textContent = msg;
+    undoBtn.style.display = "inline-block";
+    toast.classList.add("visible");
+
+    clearTimeout(showToast._t);
+    clearTimeout(showUndoToast._t);
+
+    let used = false;
+    const cleanup = () => {
+      toast.classList.remove("visible");
+      undoBtn.style.display = "none";
+      undoBtn.onclick = null;
+    };
+
+    undoBtn.onclick = () => {
+      if (used) return;
+      used = true;
+      clearTimeout(showUndoToast._t);
+      restoreFn();
+      cleanup();
+    };
+
+    showUndoToast._t = setTimeout(cleanup, 6000);
   }
 
   function escapeHtml(str) {
@@ -3937,9 +4348,20 @@
         confirmPanel.querySelector(".tile-confirm-delete").addEventListener("click", (e) => {
           e.stopPropagation();
           closeConfirmRemove();
+
+          const snapshot = {
+            subject: { ...s },
+            chapters: (DATA[s.id] || []).map(ch => ({ ...ch })),
+            nameOverride: loadSubjectNameOverrides()[s.id] || null,
+            wasCustom: !!s.custom,
+          };
+
           removeSubjectEntirely(s.id);
           renderSubjectList();
-          showToast(`${s.name} removed`);
+          showUndoToast(`${s.name} removed`, () => {
+            restoreRemovedSubject(snapshot);
+            renderSubjectList();
+          });
         });
 
         nameEl.addEventListener("click", (e) => {
@@ -4077,6 +4499,149 @@
     });
   }
 
+  // "+ Add section" — a toggle icon in the header's toolbar row, beside
+  // Timer/Chapters Due/Revision Backlog/Settings. Clicking it opens a
+  // small popover to name a brand-new section (e.g. "Electives"); the
+  // created section behaves exactly like Pre-Clinical/Para-Clinical/
+  // Clinical — same subject grid, same "+ Add subject" tile, same
+  // rename/remove tools — since it's just another entry in
+  // GROUPS/GROUP_META once created. Registered once at startup rather
+  // than rebuilt on every renderSubjectList() call, since it now lives
+  // in the header rather than at the bottom of the subject list.
+  function initAddSectionControl() {
+    const toggleBtn = document.getElementById("add-section-toggle-btn");
+    const popover = document.getElementById("add-section-popover");
+    const input = document.getElementById("add-section-input");
+    const removeBlock = document.getElementById("remove-section-block");
+    const removeList = document.getElementById("remove-section-list");
+    const confirmPanel = document.getElementById("section-confirm-remove");
+    const confirmText = document.getElementById("section-confirm-text");
+
+    let pendingRemoveKey = null;
+
+    function openPopover() {
+      popover.classList.add("visible");
+      toggleBtn.setAttribute("aria-expanded", "true");
+      input.value = "";
+      confirmPanel.classList.remove("visible");
+      renderRemovableSectionsList();
+      input.focus();
+    }
+
+    function closePopover() {
+      popover.classList.remove("visible");
+      toggleBtn.setAttribute("aria-expanded", "false");
+      confirmPanel.classList.remove("visible");
+      pendingRemoveKey = null;
+    }
+
+    function isDuplicateGroupName(name) {
+      const normalized = name.trim().toLowerCase();
+      return GROUPS.some(g => getGroupLabel(g).trim().toLowerCase() === normalized);
+    }
+
+    function confirmCreate() {
+      const name = input.value.trim();
+      if (!name) { closePopover(); return; }
+      if (isDuplicateGroupName(name)) {
+        showToast(`A section named "${name}" already exists`);
+        return;
+      }
+      addCustomGroup(name);
+      renderSubjectList();
+      closePopover();
+      showToast(`"${name}" section added`);
+    }
+
+    // Lists every removable (i.e. user-created) section with its own
+    // small delete icon, so a specific one can be picked and removed —
+    // built-in sections (Pre-Clinical/Para-Clinical/Clinical) never show
+    // up here since isRemovableGroup() excludes them.
+    function renderRemovableSectionsList() {
+      const removableGroups = GROUPS.filter(g => isRemovableGroup(g));
+      removeList.innerHTML = "";
+
+      if (removableGroups.length === 0) {
+        removeBlock.style.display = "none";
+        return;
+      }
+
+      removeBlock.style.display = "block";
+      removableGroups.forEach(g => {
+        const row = document.createElement("div");
+        row.className = "remove-section-row";
+        row.innerHTML = `
+          <span class="remove-section-name">${escapeHtml(getGroupLabel(g))}</span>
+          <button class="remove-section-btn" data-group-key="${g}" title="Remove this section" aria-label="Remove this section">&times;</button>
+        `;
+        removeList.appendChild(row);
+      });
+    }
+
+    function askRemoveSection(groupKey) {
+      const subjectCount = SUBJECTS.filter(s => s.grp === groupKey).length;
+      if (subjectCount > 0) {
+        showToast(`Move or remove all subjects in "${getGroupLabel(groupKey)}" before deleting this section`);
+        return;
+      }
+      pendingRemoveKey = groupKey;
+      confirmText.textContent = `Remove "${getGroupLabel(groupKey)}"? This can't be undone.`;
+      confirmPanel.classList.add("visible");
+    }
+
+    toggleBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (popover.classList.contains("visible")) closePopover();
+      else openPopover();
+    });
+
+    document.getElementById("add-section-confirm-btn").addEventListener("click", (e) => {
+      e.stopPropagation();
+      confirmCreate();
+    });
+
+    document.getElementById("add-section-cancel-btn").addEventListener("click", (e) => {
+      e.stopPropagation();
+      closePopover();
+    });
+
+    removeList.addEventListener("click", (e) => {
+      const btn = e.target.closest(".remove-section-btn");
+      if (!btn) return;
+      e.stopPropagation();
+      askRemoveSection(btn.getAttribute("data-group-key"));
+    });
+
+    document.getElementById("section-confirm-cancel-btn").addEventListener("click", (e) => {
+      e.stopPropagation();
+      confirmPanel.classList.remove("visible");
+      pendingRemoveKey = null;
+    });
+
+    document.getElementById("section-confirm-delete-btn").addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (!pendingRemoveKey) return;
+      const removedLabel = getGroupLabel(pendingRemoveKey);
+      removeCustomGroup(pendingRemoveKey);
+      pendingRemoveKey = null;
+      confirmPanel.classList.remove("visible");
+      renderSubjectList();
+      renderRemovableSectionsList();
+      showToast(`"${removedLabel}" section removed`);
+    });
+
+    input.addEventListener("click", (e) => e.stopPropagation());
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") { e.preventDefault(); confirmCreate(); }
+      else if (e.key === "Escape") { e.preventDefault(); closePopover(); }
+    });
+
+    document.addEventListener("click", (e) => {
+      const wrap = toggleBtn.closest(".color-picker-wrap");
+      if (!wrap.contains(e.target)) closePopover();
+    });
+  }
+
   // ---------- Chapter detail view ----------
   function openSubject(subject) {
     backAction = null;
@@ -4208,10 +4773,17 @@
 
       tr.querySelector(".del-btn").addEventListener("click", () => {
         const idx = chapters.findIndex(c => c.id === ch.id);
-        if (idx > -1) chapters.splice(idx, 1);
+        if (idx === -1) return;
+        const removedChapter = chapters[idx];
+        const removedIndex = idx;
+        chapters.splice(idx, 1);
         persist();
         renderChapterView(subject);
-        showToast("Chapter removed");
+        showUndoToast("Chapter removed", () => {
+          chapters.splice(removedIndex, 0, removedChapter);
+          persist();
+          renderChapterView(subject);
+        });
       });
 
       tbody.appendChild(tr);
@@ -4949,10 +5521,17 @@
 
       tr.querySelector(".del-btn").addEventListener("click", () => {
         const idx = entries.findIndex(e => e.id === entry.id);
-        if (idx > -1) entries.splice(idx, 1);
+        if (idx === -1) return;
+        const removedEntry = entries[idx];
+        const removedIndex = idx;
+        entries.splice(idx, 1);
         persistDaily();
         renderDayView(dateStr);
-        showToast("Entry removed");
+        showUndoToast("Entry removed", () => {
+          entries.splice(removedIndex, 0, removedEntry);
+          persistDaily();
+          renderDayView(dateStr);
+        });
       });
 
       tbody.appendChild(tr);
@@ -5082,6 +5661,7 @@
     groupLabels: "rounds_group_labels_v1",
     customSubjects: "rounds_custom_subjects_v1",
     removedBuiltinSubjects: "rounds_removed_builtin_subjects_v1",
+    customGroups: "rounds_custom_groups_v1",
   };
 
   function buildBackupPayload() {
@@ -5182,13 +5762,15 @@
     if (emailInput) emailInput.value = savedProfile.email || "";
     updateOwnerBadge(savedProfile);
 
-    // Subject renames, custom subjects, removed built-in subjects, tile
-    // color, background color, header title/exam name, and timer
-    // visibility all need to be re-applied too — without this, a
-    // restored backup would leave stale values on screen until a manual
-    // page reload, even though the underlying data was updated.
+    // Subject renames, custom subjects, custom sections, removed
+    // built-in subjects, tile color, background color, header
+    // title/exam name, and timer visibility all need to be re-applied
+    // too — without this, a restored backup would leave stale values on
+    // screen until a manual page reload, even though the underlying
+    // data was updated.
     applyRemovedBuiltinFilter();
     mergeCustomSubjects();
+    mergeCustomGroups();
     applySubjectNameOverrides();
 
     const savedTileColor = loadTileColor();
@@ -6365,6 +6947,7 @@
   initBackupStrip();
   initSyncButton();
   initSettingsMenu();
+  initAddSectionControl();
   updateRevisionOverviewBadges();
   document.getElementById("open-revision-due-tile").addEventListener("click", openRevisionDueDashboard);
   document.getElementById("open-revision-backlog-tile").addEventListener("click", openRevisionBacklogDashboard);
