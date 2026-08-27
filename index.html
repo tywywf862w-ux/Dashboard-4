@@ -878,7 +878,7 @@
       font-size: 11px;
     }
 
-    .timer-toggle-strip {
+    .hub-toggle-strip {
       margin-top: 8px;
     }
 
@@ -948,18 +948,111 @@
     display: none;
   }
 
-  .timer-toggle-strip {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 8px;
+  /* ---------- Radial hub menu (replaces the flat icon row) ---------- */
+
+  .hub-toggle-strip {
     margin-top: 10px;
+    display: flex;
+    justify-content: flex-end;
   }
 
-  .toggle-strip-group {
+  .hub-wrap {
+    position: relative;
+    width: 34px;
+    height: 34px;
+  }
+
+  .hub-btn {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
     display: flex;
     align-items: center;
-    gap: 8px;
+    justify-content: center;
+    background: linear-gradient(155deg, #f4f4f2 0%, #dcdcda 30%, #b8b9bb 60%, #e8e8e7 100%);
+    border: 1px solid #8a8b8d;
+    cursor: pointer;
+    position: relative;
+    z-index: 3;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.7) inset,
+      0 -3px 6px rgba(0,0,0,0.15) inset,
+      0 2px 5px rgba(0,0,0,0.25);
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.15s ease;
+  }
+
+  .hub-btn:hover {
+    transform: scale(1.06);
+  }
+
+  .hub-btn:active {
+    transform: scale(0.94);
+  }
+
+  .hub-btn svg {
+    position: absolute;
+    width: 17px;
+    height: 17px;
+    color: #3a3a3c;
+    stroke: #3a3a3c;
+    transition: opacity 0.15s ease, transform 0.2s ease;
+  }
+
+  .hub-icon-close {
+    opacity: 0;
+    transform: rotate(-90deg) scale(0.5);
+  }
+
+  .hub-wrap[data-open="true"] .hub-btn {
+    background: linear-gradient(155deg, #34332f 0%, #232220 55%, #141312 100%);
+    border-color: #0c0c0b;
+  }
+
+  .hub-wrap[data-open="true"] .hub-icon-dots {
+    opacity: 0;
+    transform: rotate(90deg) scale(0.5);
+  }
+
+  .hub-wrap[data-open="true"] .hub-icon-close {
+    opacity: 1;
+    transform: rotate(0deg) scale(1);
+    color: #f6f3ec;
+    stroke: #f6f3ec;
+  }
+
+  /* Each satellite sits at the hub's own position by default (collapsed,
+     invisible, unclickable) and is translated out along a fan arc when
+     the hub opens — via inline --sx/--sy custom properties set in JS
+     from each icon's actual angle, so the arc works the same regardless
+     of how many satellites exist. */
+  .hub-satellite {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 34px;
+    height: 34px;
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(0, 0) scale(0.5);
+    transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.18s ease;
+    z-index: 2;
+  }
+
+  .hub-wrap[data-open="true"] .hub-satellite {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translate(var(--sx, 0px), var(--sy, 0px)) scale(1);
+  }
+
+  /* Staggered pop-out so satellites don't all move in lockstep — a small
+     per-index delay read from data-hub-index via JS-set inline style. */
+
+  @media (prefers-reduced-motion: reduce) {
+    .hub-btn,
+    .hub-btn svg,
+    .hub-satellite {
+      transition: none !important;
+    }
   }
 
   .timer-toggle-btn {
@@ -2606,6 +2699,78 @@
       0 1px 1px rgba(28,28,26,0.18);
   }
 
+  /* ---------- Activity feed ---------- */
+
+  .activity-feed-list {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .activity-day-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .activity-day-label {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    opacity: 0.5;
+    margin-bottom: 2px;
+  }
+
+  .activity-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #fffdf8;
+    border: 1px solid rgba(28,28,26,0.1);
+    border-radius: 8px;
+    padding: 10px 12px;
+    box-shadow: 0 1px 2px rgba(28,28,26,0.05);
+  }
+
+  .activity-row-icon {
+    flex-shrink: 0;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .activity-row-text {
+    flex: 1;
+    min-width: 0;
+    font-size: 13px;
+    line-height: 1.4;
+    overflow-wrap: break-word;
+  }
+
+  .activity-row-time {
+    flex-shrink: 0;
+    font-size: 10.5px;
+    opacity: 0.5;
+    white-space: nowrap;
+  }
+
+  @media (max-width: 560px) {
+    .activity-row {
+      flex-wrap: wrap;
+    }
+
+    .activity-row-time {
+      width: 100%;
+      padding-left: 36px;
+    }
+  }
+
   .subject-stats {
     display: flex;
     gap: 18px;
@@ -3303,63 +3468,157 @@
       </div>
     </div>
 
-    <div class="timer-toggle-strip" id="timer-toggle-strip">
-      <div class="toggle-strip-group">
-        <button class="timer-toggle-btn" id="timer-toggle-btn" title="Show/hide study timer" aria-label="Toggle study timer widget" aria-pressed="true">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="13" r="8"></circle>
-            <path d="M12 9v4l3 2"></path>
-            <path d="M9 2h6"></path>
-            <path d="M18.5 5.5l1.5-1.5"></path>
+    <div class="hub-toggle-strip" id="hub-toggle-strip">
+      <div class="hub-wrap" id="hub-wrap">
+        <button class="hub-btn" id="hub-toggle-btn" title="Open quick actions" aria-label="Open quick actions" aria-expanded="false">
+          <svg class="hub-icon-dots" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="5" r="1.6" fill="currentColor" stroke="none"></circle>
+            <circle cx="19" cy="12" r="1.6" fill="currentColor" stroke="none"></circle>
+            <circle cx="12" cy="19" r="1.6" fill="currentColor" stroke="none"></circle>
+            <circle cx="5" cy="12" r="1.6" fill="currentColor" stroke="none"></circle>
+          </svg>
+          <svg class="hub-icon-close" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 6l12 12M18 6L6 18"></path>
           </svg>
         </button>
 
-        <button class="timer-toggle-btn shortcut-icon-btn" id="open-revision-due-icon-btn" title="Open Chapters Due for Revision" aria-label="Open Chapters Due for Revision">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M9 11l2 2 4-4"></path>
-            <rect x="3" y="4" width="18" height="17" rx="2"></rect>
-            <path d="M3 9h18"></path>
-          </svg>
-          <span class="shortcut-badge" id="shortcut-due-badge"></span>
-        </button>
-
-        <button class="timer-toggle-btn shortcut-icon-btn" id="open-revision-backlog-icon-btn" title="Open Revision Backlog" aria-label="Open Revision Backlog">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="12" r="8.5"></circle>
-            <path d="M12 7.5v5l3.5 2"></path>
-          </svg>
-          <span class="shortcut-badge" id="shortcut-backlog-badge"></span>
-        </button>
-
-        <div class="color-picker-wrap">
-          <button class="timer-toggle-btn shortcut-icon-btn settings-icon-btn" id="settings-menu-btn" title="Settings" aria-label="Open settings" aria-expanded="false">
+        <div class="hub-satellite" data-hub-index="0">
+          <button class="timer-toggle-btn" id="timer-toggle-btn" title="Show/hide study timer" aria-label="Toggle study timer widget" aria-pressed="true">
             <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="3"></circle>
-              <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.04 1.56V21a2 2 0 0 1-4 0v-.09A1.7 1.7 0 0 0 9 19.37a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.63 15a1.7 1.7 0 0 0-1.56-1.04H3a2 2 0 0 1 0-4h.09A1.7 1.7 0 0 0 4.63 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.63a1.7 1.7 0 0 0 1.04-1.56V3a2 2 0 0 1 4 0v.09A1.7 1.7 0 0 0 15 4.63a1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.37 9a1.7 1.7 0 0 0 1.56 1.04H21a2 2 0 0 1 0 4h-.09A1.7 1.7 0 0 0 19.4 15Z"></path>
+              <circle cx="12" cy="13" r="8"></circle>
+              <path d="M12 9v4l3 2"></path>
+              <path d="M9 2h6"></path>
+              <path d="M18.5 5.5l1.5-1.5"></path>
             </svg>
           </button>
+        </div>
 
-          <!-- Settings main menu -->
-          <div class="color-picker-popover color-menu-popover" id="settings-menu-popover">
-            <div class="color-menu-list">
-              <button class="color-menu-item" id="open-profile-panel-btn">
+        <div class="hub-satellite" data-hub-index="1">
+          <button class="timer-toggle-btn shortcut-icon-btn" id="open-revision-due-icon-btn" title="Open Chapters Due for Revision" aria-label="Open Chapters Due for Revision">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 11l2 2 4-4"></path>
+              <rect x="3" y="4" width="18" height="17" rx="2"></rect>
+              <path d="M3 9h18"></path>
+            </svg>
+            <span class="shortcut-badge" id="shortcut-due-badge"></span>
+          </button>
+        </div>
+
+        <div class="hub-satellite" data-hub-index="2">
+          <button class="timer-toggle-btn shortcut-icon-btn" id="open-revision-backlog-icon-btn" title="Open Revision Backlog" aria-label="Open Revision Backlog">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="8.5"></circle>
+              <path d="M12 7.5v5l3.5 2"></path>
+            </svg>
+            <span class="shortcut-badge" id="shortcut-backlog-badge"></span>
+          </button>
+        </div>
+
+        <div class="hub-satellite" data-hub-index="3">
+          <div class="color-picker-wrap">
+            <button class="timer-toggle-btn shortcut-icon-btn settings-icon-btn" id="settings-menu-btn" title="Settings" aria-label="Open settings" aria-expanded="false">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.87-.34 1.7 1.7 0 0 0-1.04 1.56V21a2 2 0 0 1-4 0v-.09A1.7 1.7 0 0 0 9 19.37a1.7 1.7 0 0 0-1.87.34l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.7 1.7 0 0 0 4.63 15a1.7 1.7 0 0 0-1.56-1.04H3a2 2 0 0 1 0-4h.09A1.7 1.7 0 0 0 4.63 9a1.7 1.7 0 0 0-.34-1.87l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.7 1.7 0 0 0 9 4.63a1.7 1.7 0 0 0 1.04-1.56V3a2 2 0 0 1 4 0v.09A1.7 1.7 0 0 0 15 4.63a1.7 1.7 0 0 0 1.87-.34l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.7 1.7 0 0 0 19.37 9a1.7 1.7 0 0 0 1.56 1.04H21a2 2 0 0 1 0 4h-.09A1.7 1.7 0 0 0 19.4 15Z"></path>
+              </svg>
+            </button>
+
+            <!-- Settings main menu -->
+            <div class="color-picker-popover color-menu-popover" id="settings-menu-popover">
+              <div class="color-menu-list">
+                <button class="color-menu-item" id="open-profile-panel-btn">
+                  <span class="settings-menu-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="12" cy="8" r="4"></circle>
+                      <path d="M4 20c0-4.4 3.6-7 8-7s8 2.6 8 7"></path>
+                    </svg>
+                  </span>
+                  <span>Personal info</span>
+                </button>
+                <button class="color-menu-item" id="open-tile-color-btn">
+                  <span class="color-swatch-dot" id="tile-color-dot"></span>
+                  <span>Tile color</span>
+                </button>
+                <button class="color-menu-item" id="open-bg-color-btn">
+                  <span class="bg-swatch-dot" id="bg-color-dot"></span>
+                  <span>Background color</span>
+                </button>
+                <button class="color-menu-item" id="open-backup-panel-btn">
+                  <span class="settings-menu-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M12 3v12"></path>
+                      <path d="M7 10l5 5 5-5"></path>
+                      <path d="M4 19h16"></path>
+                    </svg>
+                  </span>
+                  <span>Backup &amp; restore</span>
+                </button>
+                <button class="color-menu-item" id="open-app-lock-panel-btn">
+                  <span class="settings-menu-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="4" y="10.5" width="16" height="10" rx="2"></rect>
+                      <path d="M7.5 10.5V7a4.5 4.5 0 0 1 9 0v3.5"></path>
+                    </svg>
+                  </span>
+                  <span>App lock</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Personal info sub-panel -->
+            <div class="color-picker-popover profile-popover" id="profile-popover">
+              <button class="color-submenu-back" id="profile-back-btn">&larr; Back</button>
+              <div class="profile-field">
+                <label for="profile-name-input">Name</label>
+                <input type="text" id="profile-name-input" placeholder="Your name" autocomplete="off" />
+              </div>
+              <div class="profile-field">
+                <label for="profile-work-input">Work</label>
+                <input type="text" id="profile-work-input" placeholder="e.g. MBBS intern" autocomplete="off" />
+              </div>
+              <div class="profile-field">
+                <label for="profile-phone-input">Phone number</label>
+                <input type="tel" id="profile-phone-input" placeholder="Phone number" autocomplete="off" />
+              </div>
+              <div class="profile-field">
+                <label for="profile-email-input">Email</label>
+                <input type="email" id="profile-email-input" placeholder="Email" autocomplete="off" />
+              </div>
+              <p class="profile-note">Saved on this device only. Name shows in the top-right corner once set.</p>
+            </div>
+
+            <!-- Tile color sub-panel -->
+            <div class="color-picker-popover" id="color-picker-popover">
+              <button class="color-submenu-back" id="tile-color-back-btn">&larr; Back</button>
+              <div class="color-swatch-grid" id="color-swatch-grid"></div>
+            </div>
+
+            <!-- Background color sub-panel -->
+            <div class="color-picker-popover" id="bg-color-popover">
+              <button class="color-submenu-back" id="bg-color-back-btn">&larr; Back</button>
+              <div class="color-swatch-grid" id="bg-color-swatch-grid"></div>
+            </div>
+
+            <!-- Backup & restore sub-panel -->
+            <div class="color-picker-popover backup-popover" id="backup-popover">
+              <button class="color-submenu-back" id="backup-back-btn">&larr; Back</button>
+
+              <button class="color-menu-item" id="sync-backup-btn">
                 <span class="settings-menu-icon">
                   <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="8" r="4"></circle>
-                    <path d="M4 20c0-4.4 3.6-7 8-7s8 2.6 8 7"></path>
+                    <path d="M21 12a9 9 0 1 1-3-6.7"></path>
+                    <path d="M21 4v5h-5"></path>
                   </svg>
                 </span>
-                <span>Personal info</span>
+                <span>Sync now</span>
               </button>
-              <button class="color-menu-item" id="open-tile-color-btn">
-                <span class="color-swatch-dot" id="tile-color-dot"></span>
-                <span>Tile color</span>
-              </button>
-              <button class="color-menu-item" id="open-bg-color-btn">
-                <span class="bg-swatch-dot" id="bg-color-dot"></span>
-                <span>Background color</span>
-              </button>
-              <button class="color-menu-item" id="open-backup-panel-btn">
+              <p class="backup-sync-status" id="backup-sync-status">Not synced yet</p>
+              <p class="sync-provenance-status" id="sync-provenance-status"></p>
+              <p class="device-name-note" id="device-name-note"></p>
+
+              <div class="backup-divider"></div>
+
+              <button class="color-menu-item" id="export-backup-btn">
                 <span class="settings-menu-icon">
                   <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M12 3v12"></path>
@@ -3367,135 +3626,71 @@
                     <path d="M4 19h16"></path>
                   </svg>
                 </span>
-                <span>Backup &amp; restore</span>
+                <span>Export new backup</span>
               </button>
-              <button class="color-menu-item" id="open-app-lock-panel-btn">
+              <button class="color-menu-item" id="import-backup-btn">
                 <span class="settings-menu-icon">
                   <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="4" y="10.5" width="16" height="10" rx="2"></rect>
-                    <path d="M7.5 10.5V7a4.5 4.5 0 0 1 9 0v3.5"></path>
+                    <path d="M12 21V9"></path>
+                    <path d="M7 14l5-5 5 5"></path>
+                    <path d="M4 5h16"></path>
                   </svg>
                 </span>
-                <span>App lock</span>
+                <span>Import backup</span>
               </button>
+              <input type="file" id="import-file-input" accept="application/json" style="display:none" />
             </div>
-          </div>
 
-          <!-- Personal info sub-panel -->
-          <div class="color-picker-popover profile-popover" id="profile-popover">
-            <button class="color-submenu-back" id="profile-back-btn">&larr; Back</button>
-            <div class="profile-field">
-              <label for="profile-name-input">Name</label>
-              <input type="text" id="profile-name-input" placeholder="Your name" autocomplete="off" />
+            <!-- App lock sub-panel -->
+            <div class="color-picker-popover applock-popover" id="applock-popover">
+              <button class="color-submenu-back" id="applock-back-btn">&larr; Back</button>
+              <p class="applock-desc" id="applock-status-desc">No PIN set — anyone who opens this app can see everything.</p>
+              <p class="applock-note">A PIN only stops someone from casually opening this app on your unlocked phone. It's stored on this device only and isn't real encryption — your iPhone's own passcode/Face ID is still your strongest protection.</p>
+              <button class="applock-action-btn" id="applock-set-btn">Set a PIN</button>
+              <button class="applock-action-btn applock-remove-btn" id="applock-remove-btn" style="display:none">Remove PIN</button>
             </div>
-            <div class="profile-field">
-              <label for="profile-work-input">Work</label>
-              <input type="text" id="profile-work-input" placeholder="e.g. MBBS intern" autocomplete="off" />
-            </div>
-            <div class="profile-field">
-              <label for="profile-phone-input">Phone number</label>
-              <input type="tel" id="profile-phone-input" placeholder="Phone number" autocomplete="off" />
-            </div>
-            <div class="profile-field">
-              <label for="profile-email-input">Email</label>
-              <input type="email" id="profile-email-input" placeholder="Email" autocomplete="off" />
-            </div>
-            <p class="profile-note">Saved on this device only. Name shows in the top-right corner once set.</p>
-          </div>
-
-          <!-- Tile color sub-panel -->
-          <div class="color-picker-popover" id="color-picker-popover">
-            <button class="color-submenu-back" id="tile-color-back-btn">&larr; Back</button>
-            <div class="color-swatch-grid" id="color-swatch-grid"></div>
-          </div>
-
-          <!-- Background color sub-panel -->
-          <div class="color-picker-popover" id="bg-color-popover">
-            <button class="color-submenu-back" id="bg-color-back-btn">&larr; Back</button>
-            <div class="color-swatch-grid" id="bg-color-swatch-grid"></div>
-          </div>
-
-          <!-- Backup & restore sub-panel -->
-          <div class="color-picker-popover backup-popover" id="backup-popover">
-            <button class="color-submenu-back" id="backup-back-btn">&larr; Back</button>
-
-            <button class="color-menu-item" id="sync-backup-btn">
-              <span class="settings-menu-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M21 12a9 9 0 1 1-3-6.7"></path>
-                  <path d="M21 4v5h-5"></path>
-                </svg>
-              </span>
-              <span>Sync now</span>
-            </button>
-            <p class="backup-sync-status" id="backup-sync-status">Not synced yet</p>
-            <p class="sync-provenance-status" id="sync-provenance-status"></p>
-            <p class="device-name-note" id="device-name-note"></p>
-
-            <div class="backup-divider"></div>
-
-            <button class="color-menu-item" id="export-backup-btn">
-              <span class="settings-menu-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M12 3v12"></path>
-                  <path d="M7 10l5 5 5-5"></path>
-                  <path d="M4 19h16"></path>
-                </svg>
-              </span>
-              <span>Export new backup</span>
-            </button>
-            <button class="color-menu-item" id="import-backup-btn">
-              <span class="settings-menu-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M12 21V9"></path>
-                  <path d="M7 14l5-5 5 5"></path>
-                  <path d="M4 5h16"></path>
-                </svg>
-              </span>
-              <span>Import backup</span>
-            </button>
-            <input type="file" id="import-file-input" accept="application/json" style="display:none" />
-          </div>
-
-          <!-- App lock sub-panel -->
-          <div class="color-picker-popover applock-popover" id="applock-popover">
-            <button class="color-submenu-back" id="applock-back-btn">&larr; Back</button>
-            <p class="applock-desc" id="applock-status-desc">No PIN set — anyone who opens this app can see everything.</p>
-            <p class="applock-note">A PIN only stops someone from casually opening this app on your unlocked phone. It's stored on this device only and isn't real encryption — your iPhone's own passcode/Face ID is still your strongest protection.</p>
-            <button class="applock-action-btn" id="applock-set-btn">Set a PIN</button>
-            <button class="applock-action-btn applock-remove-btn" id="applock-remove-btn" style="display:none">Remove PIN</button>
           </div>
         </div>
 
-        <div class="color-picker-wrap">
-          <button class="timer-toggle-btn shortcut-icon-btn" id="add-section-toggle-btn" title="Add a new section" aria-label="Add a new section" aria-expanded="false">
-            <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M12 5v14"></path>
-              <path d="M5 12h14"></path>
-            </svg>
-          </button>
-          <div class="color-picker-popover add-section-popover" id="add-section-popover">
-            <label class="add-section-popover-label">New section name</label>
-            <input type="text" class="add-section-input" id="add-section-input" placeholder="e.g. Electives" autocomplete="off" />
-            <div class="add-section-actions">
-              <button class="add-section-cancel" id="add-section-cancel-btn">Cancel</button>
-              <button class="add-section-confirm" id="add-section-confirm-btn">Create</button>
-            </div>
+        <div class="hub-satellite" data-hub-index="4">
+          <div class="color-picker-wrap">
+            <button class="timer-toggle-btn shortcut-icon-btn" id="add-section-toggle-btn" title="Add a new section" aria-label="Add a new section" aria-expanded="false">
+              <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 5v14"></path>
+                <path d="M5 12h14"></path>
+              </svg>
+            </button>
+            <div class="color-picker-popover add-section-popover" id="add-section-popover">
+              <label class="add-section-popover-label">New section name</label>
+              <input type="text" class="add-section-input" id="add-section-input" placeholder="e.g. Electives" autocomplete="off" />
+              <div class="add-section-actions">
+                <button class="add-section-cancel" id="add-section-cancel-btn">Cancel</button>
+                <button class="add-section-confirm" id="add-section-confirm-btn">Create</button>
+              </div>
 
-            <div class="remove-section-block" id="remove-section-block">
-              <div class="add-section-divider"></div>
-              <label class="add-section-popover-label">Remove a section</label>
-              <div class="remove-section-list" id="remove-section-list"></div>
-            </div>
+              <div class="remove-section-block" id="remove-section-block">
+                <div class="add-section-divider"></div>
+                <label class="add-section-popover-label">Remove a section</label>
+                <div class="remove-section-list" id="remove-section-list"></div>
+              </div>
 
-            <div class="section-confirm-remove" id="section-confirm-remove">
-              <p class="section-confirm-text" id="section-confirm-text"></p>
-              <div class="section-confirm-actions">
-                <button class="section-confirm-cancel" id="section-confirm-cancel-btn">Cancel</button>
-                <button class="section-confirm-delete" id="section-confirm-delete-btn">Remove</button>
+              <div class="section-confirm-remove" id="section-confirm-remove">
+                <p class="section-confirm-text" id="section-confirm-text"></p>
+                <div class="section-confirm-actions">
+                  <button class="section-confirm-cancel" id="section-confirm-cancel-btn">Cancel</button>
+                  <button class="section-confirm-delete" id="section-confirm-delete-btn">Remove</button>
+                </div>
               </div>
             </div>
           </div>
+        </div>
+
+        <div class="hub-satellite" data-hub-index="5">
+          <button class="timer-toggle-btn shortcut-icon-btn" id="open-activity-feed-btn" title="Open Activity feed" aria-label="Open Activity feed">
+            <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 12h4l2-7 4 14 2-7h6"></path>
+            </svg>
+          </button>
         </div>
       </div>
     </div>
@@ -3572,6 +3767,7 @@
   <div id="view-revision-due" class="hidden"></div>
   <div id="view-revision-backlog" class="hidden"></div>
   <div id="view-day" class="hidden"></div>
+  <div id="view-activity-feed" class="hidden"></div>
 </main>
 
 <div class="toast" id="toast">
@@ -3742,6 +3938,45 @@
     GROUP_DEFAULT_LABELS[g] = customMatch ? customMatch.label : g;
     GROUP_DEFAULT_TAGS[g] = GROUP_META[g].tag;
   });
+
+  // ---------- Activity log ----------
+  // A real, timestamped event log — every meaningful action (chapter
+  // revised, subject added, daily target completed, etc.) appends one
+  // entry here as it happens. This is what powers the Activity feed, and
+  // deliberately isn't reconstructed by diffing snapshots — that
+  // approach can't know exact timestamps or distinguish a single change
+  // from several that canceled out. Capped to the most recent 200
+  // entries so it can't grow unbounded over months of use.
+  const ACTIVITY_LOG_KEY = "rounds_activity_log_v1";
+  const ACTIVITY_LOG_MAX_ENTRIES = 200;
+
+  function loadActivityLog() {
+    try {
+      const raw = localStorage.getItem(ACTIVITY_LOG_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) {
+      console.error("Failed to load activity log", e);
+      return [];
+    }
+  }
+
+  function saveActivityLog(entries) {
+    try {
+      localStorage.setItem(ACTIVITY_LOG_KEY, JSON.stringify(entries));
+    } catch (e) {
+      console.error("Failed to save activity log", e);
+    }
+  }
+
+  // type: a short machine tag (e.g. "chapter_revised") used only for
+  // picking an icon/color in the feed — the actual sentence shown to the
+  // user is `text`, built by the caller so it reads naturally.
+  function logActivity(type, text) {
+    const entries = loadActivityLog();
+    entries.unshift({ type, text, timestamp: new Date().toISOString() });
+    if (entries.length > ACTIVITY_LOG_MAX_ENTRIES) entries.length = ACTIVITY_LOG_MAX_ENTRIES;
+    saveActivityLog(entries);
+  }
 
   // ---------- User-added custom subjects ----------
   // Stored separately from the built-in SUBJECTS list so the 19 defaults
@@ -4160,6 +4395,7 @@
     document.getElementById("view-revision-due").classList.toggle("hidden", view !== "revision-due");
     document.getElementById("view-revision-backlog").classList.toggle("hidden", view !== "revision-backlog");
     document.getElementById("view-day").classList.toggle("hidden", view !== "day");
+    document.getElementById("view-activity-feed").classList.toggle("hidden", view !== "activity-feed");
     document.getElementById("breadcrumb").classList.toggle("visible", view !== "subjects");
   }
 
@@ -4411,6 +4647,7 @@
           };
 
           removeSubjectEntirely(s.id);
+          logActivity("subject_removed", `${s.name} removed`);
           renderSubjectList();
           showUndoToast(`${s.name} removed`, () => {
             restoreRemovedSubject(snapshot);
@@ -4521,6 +4758,7 @@
         }
 
         addCustomSubject(name, grp);
+        logActivity("subject_added", `${name} added to ${getGroupLabel(grp)}`);
         renderSubjectList();
         showToast(`${name} added to ${getGroupLabel(grp)}`);
       }
@@ -4602,6 +4840,7 @@
         return;
       }
       addCustomGroup(name);
+      logActivity("section_added", `"${name}" section created`);
       renderSubjectList();
       closePopover();
       showToast(`"${name}" section added`);
@@ -4677,6 +4916,7 @@
       if (!pendingRemoveKey) return;
       const removedLabel = getGroupLabel(pendingRemoveKey);
       removeCustomGroup(pendingRemoveKey);
+      logActivity("section_removed", `"${removedLabel}" section removed`);
       pendingRemoveKey = null;
       confirmPanel.classList.remove("visible");
       renderSubjectList();
@@ -4748,6 +4988,7 @@
     document.getElementById("add-chapter-btn").addEventListener("click", () => {
       chapters.push({ id: uid(), name: "", mcq: "", pyq: "", lectureDate: "", revision: "none" });
       persist();
+      logActivity("chapter_added", `${subject.name} → new chapter added`);
       renderChapterView(subject);
       requestAnimationFrame(() => {
         const rows = document.querySelectorAll("#chapter-tbody tr");
@@ -4819,6 +5060,12 @@
           persist();
           updateSubjectStats(chapters);
 
+          if (field === "revision" && prevValue !== el.value) {
+            const chapterName = ch.name || "Untitled chapter";
+            const statusLabel = el.value === "done" ? "marked revised" : el.value === "progress" ? "marked in progress" : "reset to not started";
+            logActivity("chapter_revision", `${subject.name} → ${chapterName} ${statusLabel}`);
+          }
+
           if (field === "revision" && prevValue !== "done" && el.value === "done") {
             celebrateRevised(tr, el.closest(".revision-cell-wrap"));
           }
@@ -4832,6 +5079,7 @@
         const removedIndex = idx;
         chapters.splice(idx, 1);
         persist();
+        logActivity("chapter_removed", `${subject.name} → ${removedChapter.name || "Untitled chapter"} removed`);
         renderChapterView(subject);
         showUndoToast("Chapter removed", () => {
           chapters.splice(removedIndex, 0, removedChapter);
@@ -5168,7 +5416,115 @@
     });
   }
 
-  // ---------- Revision Backlog (own dashboard, cross-subject) ----------
+  // ---------- Activity feed ----------
+  // Displays the real, timestamped event log built by logActivity() calls
+  // scattered throughout the app — grouped by day (Today / Yesterday /
+  // an actual date), newest first within each group.
+  const ACTIVITY_TYPE_ICONS = {
+    chapter_revision: "&#10003;",
+    chapter_added: "&#43;",
+    chapter_removed: "&times;",
+    subject_added: "&#43;",
+    subject_removed: "&times;",
+    section_added: "&#43;",
+    section_removed: "&times;",
+    daily_target_completed: "&#9733;",
+    exam_date_changed: "&#128197;",
+  };
+
+  const ACTIVITY_TYPE_COLORS = {
+    chapter_revision: "#2d6a4f",
+    chapter_added: "#3d5a80",
+    chapter_removed: "#8b2e3f",
+    subject_added: "#3d5a80",
+    subject_removed: "#8b2e3f",
+    section_added: "#3d5a80",
+    section_removed: "#8b2e3f",
+    daily_target_completed: "#9c6b1f",
+    exam_date_changed: "#5fd4e8",
+  };
+
+  function openActivityFeedDashboard() {
+    backAction = null;
+    showView("activity-feed");
+    document.getElementById("header-subtitle").textContent = "A running log of changes across your dashboard — chapters, subjects, sections, and daily targets, newest first.";
+    renderActivityFeedPage();
+  }
+
+  // Groups entries into "Today", "Yesterday", or a formatted date label,
+  // preserving the newest-first order the log is already stored in.
+  function groupActivityByDay(entries) {
+    const groups = [];
+    let currentLabel = null;
+    let currentGroup = null;
+
+    const todayStr = todayISO();
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toISOString().slice(0, 10);
+
+    entries.forEach(entry => {
+      const entryDateStr = entry.timestamp.slice(0, 10);
+      let label;
+      if (entryDateStr === todayStr) label = "Today";
+      else if (entryDateStr === yesterdayStr) label = "Yesterday";
+      else {
+        const d = new Date(entry.timestamp);
+        label = `${DOW_NAMES[d.getDay()]}, ${MONTH_NAMES[d.getMonth()]} ${d.getDate()}`;
+      }
+
+      if (label !== currentLabel) {
+        currentLabel = label;
+        currentGroup = { label, items: [] };
+        groups.push(currentGroup);
+      }
+      currentGroup.items.push(entry);
+    });
+
+    return groups;
+  }
+
+  function renderActivityFeedPage() {
+    const container = document.getElementById("view-activity-feed");
+    container.innerHTML = `
+      <div class="subject-title-row">
+        <div class="subject-title">Activity Feed</div>
+      </div>
+      <p class="daily-sub">Automatically generated from your own actions — nothing here needs to be filled in manually.</p>
+
+      <div class="activity-feed-list" id="activity-feed-list"></div>
+    `;
+
+    renderActivityFeedList();
+  }
+
+  function renderActivityFeedList() {
+    const listEl = document.getElementById("activity-feed-list");
+    if (!listEl) return;
+
+    const entries = loadActivityLog();
+
+    if (entries.length === 0) {
+      listEl.innerHTML = `<div class="empty-state">Nothing logged yet. As you mark chapters revised, add subjects, or complete daily targets, they'll show up here automatically.</div>`;
+      return;
+    }
+
+    const groups = groupActivityByDay(entries);
+
+    listEl.innerHTML = groups.map(group => `
+      <div class="activity-day-group">
+        <div class="activity-day-label">${group.label.toUpperCase()}</div>
+        ${group.items.map(item => `
+          <div class="activity-row">
+            <span class="activity-row-icon" style="background:${ACTIVITY_TYPE_COLORS[item.type] || "#6b6558"}22; color:${ACTIVITY_TYPE_COLORS[item.type] || "#6b6558"}">${ACTIVITY_TYPE_ICONS[item.type] || "&bull;"}</span>
+            <span class="activity-row-text">${escapeHtml(item.text)}</span>
+            <span class="activity-row-time">${formatRelativeTime(item.timestamp)}</span>
+          </div>
+        `).join("")}
+      </div>
+    `).join("");
+  }
+
   // Same source and same "not done" filter as Chapters Due for Revision,
   // but scanning every stage whose date has already passed rather than
   // just the one currently selected date.
@@ -5563,8 +5919,17 @@
         const evt = el.tagName === "SELECT" ? "change" : (el.type === "checkbox" ? "change" : "input");
         el.addEventListener(evt, () => {
           const field = el.getAttribute("data-field");
+          const wasFullyDone = entry.mcqDone && entry.lectureDone && entry.revisionDone;
           entry[field] = el.type === "checkbox" ? el.checked : el.value;
           persistDaily();
+
+          const isFullyDone = entry.mcqDone && entry.lectureDone && entry.revisionDone;
+          if (el.type === "checkbox" && !wasFullyDone && isFullyDone) {
+            const subj = subjectById(entry.subjectId);
+            const subjName = subj ? subj.name : "Untitled subject";
+            logActivity("daily_target_completed", `Daily target completed: ${subjName} (${formatDateShort(dateStr)})`);
+          }
+
           if (el.type === "checkbox") {
             renderDayView(dateStr);
           } else {
@@ -5699,6 +6064,11 @@
       const ok = saveExamDate(val);
       if (ok) {
         showToast(val ? "Exam date saved" : "Exam date cleared");
+        if (val) {
+          const [y, m, d] = val.split("-").map(Number);
+          const readable = `${d} ${MONTH_NAMES[m - 1].slice(0, 3)} ${y}`;
+          logActivity("exam_date_changed", `Exam date set to ${readable}`);
+        }
       } else {
         showToast("Save failed — storage may be full");
       }
@@ -5800,6 +6170,7 @@
     customSubjects: "rounds_custom_subjects_v1",
     removedBuiltinSubjects: "rounds_removed_builtin_subjects_v1",
     customGroups: "rounds_custom_groups_v1",
+    activityLog: "rounds_activity_log_v1",
   };
 
   function buildBackupPayload() {
@@ -5865,6 +6236,8 @@
     // Re-read every in-memory store from localStorage and refresh every view.
     DATA = loadData();
     DAILY = loadDaily();
+
+    renderActivityFeedList();
 
     const savedExam = loadExamDate();
     const examInput = document.getElementById("exam-date-input");
@@ -6629,6 +7002,76 @@
   }
 
   // ---------- Merged color menu (opens Tile color / Background color) ----------
+  // ---------- Radial hub menu ----------
+  // Replaces the flat row of 6 icons with one central hub button; opening
+  // it fans the same 6 controls (Timer, Chapters Due, Revision Backlog,
+  // Settings, Add section, Activity feed) out along an arc using CSS
+  // transforms, computed here rather than hardcoded so it still works
+  // cleanly if a satellite is ever added or removed later.
+  function initHubMenu() {
+    const wrap = document.getElementById("hub-wrap");
+    const hubBtn = document.getElementById("hub-toggle-btn");
+    const satellites = Array.from(document.querySelectorAll(".hub-satellite"));
+
+    // Arc from upper-left to lower-left of the hub, fanning into the
+    // open space to the left of the icon within the header — the hub
+    // now sits at the far right of the header row, so a rightward or
+    // upward arc would push satellites off-screen or into the title
+    // above. Radius is in px, matching the icons' own 34px size plus a
+    // little breathing room between them.
+    const RADIUS = 58;
+    const START_ANGLE = 70; // degrees, measured clockwise from 3 o'clock
+    const END_ANGLE = 200;
+
+    function layoutSatellites() {
+      const count = satellites.length;
+      satellites.forEach((sat, i) => {
+        const t = count === 1 ? 0 : i / (count - 1);
+        const angleDeg = START_ANGLE + (END_ANGLE - START_ANGLE) * t;
+        const angleRad = (angleDeg * Math.PI) / 180;
+        const sx = Math.cos(angleRad) * RADIUS;
+        const sy = Math.sin(angleRad) * RADIUS;
+        sat.style.setProperty("--sx", `${sx.toFixed(1)}px`);
+        sat.style.setProperty("--sy", `${sy.toFixed(1)}px`);
+        sat.style.transitionDelay = wrap.getAttribute("data-open") === "true" ? `${i * 25}ms` : "0ms";
+      });
+    }
+
+    function openHub() {
+      wrap.setAttribute("data-open", "true");
+      hubBtn.setAttribute("aria-expanded", "true");
+      layoutSatellites();
+    }
+
+    function closeHub() {
+      wrap.setAttribute("data-open", "false");
+      hubBtn.setAttribute("aria-expanded", "false");
+      // Collapse instantly (no stagger) so it doesn't look laggy on close.
+      satellites.forEach(sat => { sat.style.transitionDelay = "0ms"; });
+      // Also close any settings/add-section popover that might be open,
+      // so nothing is left floating once its trigger icon has retracted.
+      document.querySelectorAll(".color-picker-popover.visible").forEach(p => p.classList.remove("visible"));
+    }
+
+    hubBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (wrap.getAttribute("data-open") === "true") closeHub();
+      else openHub();
+    });
+
+    document.addEventListener("click", (e) => {
+      if (!wrap.contains(e.target)) closeHub();
+    });
+
+    // Recompute the arc on resize in case layout constraints change (e.g.
+    // rotating a phone) — cheap to redo since it's just trig, not a re-render.
+    window.addEventListener("resize", () => {
+      if (wrap.getAttribute("data-open") === "true") layoutSatellites();
+    });
+
+    layoutSatellites();
+  }
+
   function initSettingsMenu() {
     const menuBtn = document.getElementById("settings-menu-btn");
     const menuPopover = document.getElementById("settings-menu-popover");
@@ -7147,9 +7590,11 @@
   initSyncButton();
   initSettingsMenu();
   initAddSectionControl();
+  initHubMenu();
   updateRevisionOverviewBadges();
   document.getElementById("open-revision-due-tile").addEventListener("click", openRevisionDueDashboard);
   document.getElementById("open-revision-backlog-tile").addEventListener("click", openRevisionBacklogDashboard);
+  document.getElementById("open-activity-feed-btn").addEventListener("click", openActivityFeedDashboard);
   initTimerWidget();
 
   // ---------- Service worker registration (offline support) ----------
