@@ -776,37 +776,59 @@
     letter-spacing: 0.03em;
   }
 
-  .exam-date-input {
-    font: inherit;
+  .exam-date-display-wrap {
+    position: relative;
+    width: 100%;
+  }
+
+  .exam-date-display-text {
+    display: block;
     font-family: 'IBM Plex Mono', monospace;
     font-size: 14px;
     font-weight: 600;
-    border: 1px solid rgba(95,212,232,0.3);
-    background: rgba(95,212,232,0.06);
     color: #5fd4e8;
     text-shadow: 0 0 6px rgba(95,212,232,0.65), 0 0 14px rgba(95,212,232,0.3);
     padding: 2px 6px;
+    border: 1px solid rgba(95,212,232,0.3);
+    background: rgba(95,212,232,0.06);
     border-radius: 3px;
     box-shadow: 0 1px 2px rgba(0,0,0,0.4) inset;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
     transition: box-shadow 0.15s ease, background 0.15s ease, border-color 0.15s ease;
-    color-scheme: dark;
-    width: 100%;
-    min-width: 0;
-    max-width: 100%;
-    box-sizing: border-box;
   }
 
-  .exam-date-input:hover {
+  .exam-date-display-wrap:hover .exam-date-display-text {
     border-color: rgba(95,212,232,0.55);
     background: rgba(95,212,232,0.1);
   }
-  .exam-date-input:focus {
-    outline: none;
+
+  .exam-date-display-wrap:has(.exam-date-input:focus) .exam-date-display-text {
     border-color: #5fd4e8;
     background: rgba(95,212,232,0.14);
     box-shadow:
       0 1px 3px rgba(0,0,0,0.4) inset,
       0 0 0 2px rgba(95,212,232,0.22);
+  }
+
+  /* The real date input sits invisibly on top of our own styled text, at
+     the exact same position and size — tapping anywhere opens the native
+     iOS date picker as normal, but nothing of the native control's own
+     text rendering (which iOS lays out unpredictably and can't be
+     reliably constrained with width/box-sizing alone) is ever shown. */
+  .exam-date-input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    opacity: 0;
+    border: none;
+    background: transparent;
+    color-scheme: dark;
+    cursor: pointer;
   }
 
   .countdown-block {
@@ -837,10 +859,9 @@
       font-size: 12px;
     }
 
-    .exam-date-input {
+    .exam-date-display-text {
       font-size: 12px;
       padding: 1px 4px;
-      width: 100%;
     }
 
     header {
@@ -3247,7 +3268,10 @@
       <div class="date-sep"></div>
       <div class="date-block">
         <span class="date-label">Exam date</span>
-        <input type="date" class="exam-date-input" id="exam-date-input" />
+        <div class="exam-date-display-wrap">
+          <span class="exam-date-display-text" id="exam-date-display-text">Not set</span>
+          <input type="date" class="exam-date-input" id="exam-date-input" />
+        </div>
       </div>
       <div class="date-sep"></div>
       <div class="date-block countdown-block">
@@ -5593,6 +5617,28 @@
     }
   }
 
+  // Keeps the visible exam-date text (our own styled span) in sync with
+  // the real, invisible <input type="date"> underneath it — needed
+  // because iOS renders native date-input text in a way that can't be
+  // reliably constrained with plain CSS width/box-sizing, so we display
+  // our own formatted text instead and only use the native input for the
+  // actual picking interaction.
+  function updateExamDateDisplay() {
+    const examInput = document.getElementById("exam-date-input");
+    const displayEl = document.getElementById("exam-date-display-text");
+    if (!examInput || !displayEl) return;
+
+    if (!examInput.value) {
+      displayEl.textContent = "Not set";
+      return;
+    }
+
+    // examInput.value is always "YYYY-MM-DD" for a date input.
+    const [year, month, day] = examInput.value.split("-").map(Number);
+    const d = new Date(year, month - 1, day);
+    displayEl.textContent = `${day} ${MONTH_NAMES[d.getMonth()].slice(0, 3)} ${year}`;
+  }
+
   function updateCountdown() {
     const examInput = document.getElementById("exam-date-input");
     const countdownEl = document.getElementById("countdown-display");
@@ -5621,6 +5667,7 @@
     if (saved) {
       examInput.value = saved;
     }
+    updateExamDateDisplay();
 
     examInput.addEventListener("change", () => {
       const val = examInput.value;
@@ -5630,6 +5677,7 @@
       } else {
         showToast("Save failed — storage may be full");
       }
+      updateExamDateDisplay();
       updateCountdown();
     });
 
@@ -5735,6 +5783,7 @@
     const savedExam = loadExamDate();
     const examInput = document.getElementById("exam-date-input");
     if (examInput) examInput.value = savedExam || "";
+    updateExamDateDisplay();
     updateCountdown();
 
     const savedTimer = loadTimerSettings();
